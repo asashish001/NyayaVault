@@ -1,0 +1,16 @@
+# NyayaVault - Python Dependencies (Optional Microservice)
+# Note: The main full-stack application uses Next.js and Node.js (see package.json).
+# This file is provided in case a separate Python backend (e.g., FastAPI) is spun up
+# for OCR, Document Processing, or local LLM/RAG tasks in the future.
+
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9
+python-dotenv==1.0.1
+requests==2.31.0
+
+# Future AI/OCR dependencies (uncomment as needed)
+# pytesseract
+# PyMuPDF
+# openai
+# langchain

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0f2744;
+  --color-navy-800: #163556;
+  --color-saffron: #e89c1a;
+  --color-india-green: #1f6b3a;
+  --font-serif: "Source Serif 4", "Georgia", serif;
+  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
