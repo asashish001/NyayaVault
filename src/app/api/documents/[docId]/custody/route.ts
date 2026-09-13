@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase, writeAudit } from "@/lib/audit";
 import { appendLedgerEvent } from "@/lib/integrity";
-import { simulateDigitalSignature } from "@/lib/signature";
+import { verifyEspSignature } from "@/lib/signature";
 
 export async function GET(
   request: NextRequest,
@@ -54,9 +54,9 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { toDepartment, reason, pin } = body;
-  if (!toDepartment || !reason || !pin) {
-    return NextResponse.json({ error: "Missing required fields (toDepartment, reason, pin)" }, { status: 400 });
+  const { signedToken } = body;
+  if (!signedToken) {
+    return NextResponse.json({ error: "Missing cryptographically signed ESP token." }, { status: 400 });
   }
 
   const document = await prisma.document.findUnique({
@@ -74,13 +74,17 @@ export async function POST(
 
   if (!authResult.ok) return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
 
-  // Simulate Digital Signature
-  let signatureRef;
+  // Cryptographically Verify Digital Signature from ESP Gateway
+  let payload;
   try {
-    signatureRef = simulateDigitalSignature(user.id, docId, "CUSTODY_TRANSFER", pin);
+    payload = await verifyEspSignature(signedToken);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  // Extract tamper-proof metadata from the signed token itself
+  const { toDepartment, reason } = payload as any;
+  const signatureRef = signedToken;
 
   // Record Ledger Anchor for Custody Event (Rule R9)
   const ledgerEvent = await appendLedgerEvent({

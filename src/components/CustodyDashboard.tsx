@@ -35,7 +35,21 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
   // Transfer Form State
   const [toDept, setToDept] = useState("");
   const [reason, setReason] = useState("");
-  const [pin, setPin] = useState("");
+
+  // Handle OAuth/ESP Callback
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const signature = params.get("signature");
+      const callbackDocId = params.get("docId");
+      
+      if (signature && callbackDocId) {
+        // Automatically set the docId so the UI shows the loading correctly
+        setSelectedDocId(callbackDocId);
+        completeTransferWithSignature(callbackDocId, signature);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (selectedDocId) {
@@ -60,33 +74,33 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
     }
   }
 
-  async function handleTransfer(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedDocId) return;
-
+  async function completeTransferWithSignature(docId: string, signature: string) {
     setTransferring(true);
     try {
-      const res = await fetch(`/api/documents/${selectedDocId}/custody`, {
+      const res = await fetch(`/api/documents/${docId}/custody`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toDepartment: toDept, reason, pin }),
+        body: JSON.stringify({ signedToken: signature }),
       });
       const data = await res.json();
 
       if (res.ok) {
-        alert("Custody successfully transferred and digitally signed!");
-        setToDept("");
-        setReason("");
-        setPin("");
-        await loadTimeline(selectedDocId);
-        // We'd ideally update the local state for ownerDepartment, but a reload is safer for MVP
-        window.location.reload();
+        alert("Custody successfully transferred with cryptographic e-Sign!");
+        window.location.href = "/custody"; // clear URL params and reload
       } else {
         alert("Transfer failed: " + data.error);
       }
     } finally {
       setTransferring(false);
     }
+  }
+
+  function handleInitiateTransfer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedDocId || !toDept || !reason) return;
+
+    // Redirect to the external e-Sign Gateway simulation
+    window.location.href = `/esign-gateway?docId=${selectedDocId}&toDept=${encodeURIComponent(toDept)}&reason=${encodeURIComponent(reason)}`;
   }
 
   const selectedDoc = documents.find(d => d.id === selectedDocId);
@@ -133,8 +147,12 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
                   You cannot transfer custody because this document is currently with <strong>{selectedDoc.ownerDepartment}</strong>.
                 </div>
+              ) : transferring ? (
+                 <div className="p-8 text-center text-slate-500 animate-pulse border border-slate-200 rounded">
+                   Verifying cryptographic signature and anchoring to ledger...
+                 </div>
               ) : (
-                <form onSubmit={handleTransfer} className="space-y-4">
+                <form onSubmit={handleInitiateTransfer} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">To Department</label>
                     <select
@@ -164,22 +182,11 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                   </div>
 
                   <div className="pt-2 border-t border-slate-100">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Digital Signature PIN (DSC)</label>
-                    <p className="text-xs text-slate-500 mb-2">Simulating Class-3 DSC sign-off. (Demo PIN: 1234)</p>
-                    <input
-                      required
-                      type="password"
-                      maxLength={4}
-                      placeholder="Enter 4-digit PIN"
-                      value={pin}
-                      onChange={e => setPin(e.target.value)}
-                      className="w-32 text-center tracking-[0.25em] text-lg p-2 border border-slate-200 rounded focus:border-navy outline-none"
-                    />
+                    <p className="text-xs text-slate-500 mb-4">Clicking the button below will redirect you to the National e-Sign Gateway for Aadhaar OTP authentication.</p>
+                    <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                      Authenticate via e-Sign Gateway
+                    </Button>
                   </div>
-
-                  <Button type="submit" className="w-full" disabled={transferring}>
-                    {transferring ? "Signing..." : "Sign & Transfer"}
-                  </Button>
                 </form>
               )}
             </CardContent>
@@ -214,9 +221,9 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                       <div className="text-sm text-slate-600">
                         <span className="font-semibold">Reason:</span> {evt.reason}
                       </div>
-                      <div className="mt-2 text-xs font-mono text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100">
-                        <strong>DSC Auth:</strong> {evt.signatureRef}<br/>
-                        <strong>Ledger Proof:</strong> {evt.ledgerProofId}
+                      <div className="mt-2 text-xs font-mono text-slate-400 break-all bg-slate-50 p-2 rounded border border-slate-100 max-h-32 overflow-y-auto">
+                        <strong>e-Sign JWT:</strong><br/>{evt.signatureRef}<br/><br/>
+                        <strong>Ledger Proof:</strong><br/>{evt.ledgerProofId}
                       </div>
                     </div>
                   ))}

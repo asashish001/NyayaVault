@@ -24,7 +24,7 @@ export default async function AdminPage() {
           <CardTitle>Admin restricted</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">This page is limited to the demo System Admin identity.</p>
+          <p className="text-sm">This page is limited to the System Admin identity.</p>
         </CardContent>
       </Card>
     );

@@ -1,35 +1,46 @@
-import crypto from "crypto";
+import * as jose from 'jose';
+
+// In a real production setup, the App would verify using the ESP's Public Key (RS256).
+// For this simulation, we use symmetric HS256 to represent the ESP gateway's signature.
+const ESP_SECRET = new TextEncoder().encode(
+  'super-secure-national-esign-secret-key-2026'
+);
 
 /**
- * Simulates a Digital Signature Certificate (Class-3 DSC) signature process.
- * In a real-world scenario, this would involve a PKI infrastructure,
- * e-Sign API, or a hardware token (USB Dongle) where the user enters a PIN.
- * 
- * For this MVP (per Rule R3), we deterministically hash the payload 
- * along with the actor's ID and timestamp to simulate a verifiable signature.
+ * Generates a cryptographically signed JWT representing an X.509 e-Sign certificate.
+ * This is called by the "external" e-Sign Gateway after the user authenticates with OTP.
  */
-export function simulateDigitalSignature(
+export async function generateEspSignature(
   actorId: string,
   documentId: string,
   action: string,
-  pin: string
-): string {
-  // If the PIN is obviously wrong, we can reject it (for demo purposes)
-  if (pin !== "1234" && pin !== "0000") {
-    throw new Error("Invalid DSC PIN");
+  toDepartment: string,
+  reason: string
+): Promise<string> {
+  const jwt = await new jose.SignJWT({ actorId, documentId, action, toDepartment, reason })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setIssuer('urn:nyayavault:esp:simulator')
+    .setAudience('urn:nyayavault:app')
+    .setExpirationTime('10m') // Tokens expire quickly to prevent replay attacks
+    .sign(ESP_SECRET);
+    
+  return jwt;
+}
+
+/**
+ * Verifies the signed JWT from the e-Sign Gateway.
+ * The NyayaVault backend calls this to cryptographically validate the signature 
+ * before committing the custody transfer to the ledger.
+ */
+export async function verifyEspSignature(jwt: string): Promise<jose.JWTPayload> {
+  try {
+    const { payload } = await jose.jwtVerify(jwt, ESP_SECRET, {
+      issuer: 'urn:nyayavault:esp:simulator',
+      audience: 'urn:nyayavault:app',
+    });
+    return payload;
+  } catch (error) {
+    throw new Error('Invalid or expired e-Sign signature token.');
   }
-
-  const payload = JSON.stringify({
-    actorId,
-    documentId,
-    action,
-    timestamp: new Date().toISOString(),
-    salt: crypto.randomBytes(8).toString("hex")
-  });
-
-  // Create a SHA-256 hash of the payload
-  const hash = crypto.createHash("sha256").update(payload).digest("hex");
-  
-  // Return a mock PKCS7/JWT-like string structure for realism
-  return `dsc.sig.${hash.substring(0, 32)}`;
 }

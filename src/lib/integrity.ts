@@ -11,10 +11,9 @@ export async function appendLedgerEvent(params: {
   documentId?: string;
   versionId?: string;
   metadata?: Record<string, unknown>;
+  txClient?: any; // Pass existing transaction to avoid SQLite deadlocks
 }) {
-  // Use a transaction to ensure sequence and prevHash are strongly consistent
-  return prisma.$transaction(async (tx) => {
-    // Get the latest event to find sequence and prevHash
+  const execute = async (tx: any) => {
     const lastEvent = await tx.ledgerEvent.findFirst({
       orderBy: { sequence: "desc" },
     });
@@ -25,7 +24,6 @@ export async function appendLedgerEvent(params: {
     const timestamp = new Date();
     const metadataJson = JSON.stringify(params.metadata || {});
     
-    // Hash the contents of this event, including prevHash, to form the chain
     const eventString = [
       sequence.toString(),
       prevHash,
@@ -54,5 +52,11 @@ export async function appendLedgerEvent(params: {
         metadataJson,
       },
     });
-  });
+  };
+
+  if (params.txClient) {
+    return execute(params.txClient);
+  } else {
+    return prisma.$transaction(execute);
+  }
 }

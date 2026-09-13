@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase } from "@/lib/audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GenerateSummaryButton } from "./GenerateSummaryButton";
 import { DocumentActions } from "@/components/DocumentActions";
 
 export default async function CaseDetailPage({
@@ -77,7 +78,7 @@ export default async function CaseDetailPage({
             <CardTitle>Integrity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Badge tone="saffron">Phase 2 Enabled</Badge>
+
             <p className="text-sm text-slate-600">
               SHA-256 hashing and AES-256 encryption active. Ledger chains are being built.
             </p>
@@ -85,8 +86,9 @@ export default async function CaseDetailPage({
         </Card>
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Summary</CardTitle>
+          <GenerateSummaryButton caseId={caseId} />
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-slate-700">{record.summary}</p>
@@ -106,7 +108,9 @@ export default async function CaseDetailPage({
               {documents.map(doc => (
                 <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-3">
                   <div>
-                    <p className="font-medium text-navy">{doc.title}</p>
+                    <p className={`font-medium ${doc.status === "ARCHIVED" ? "text-red-600" : "text-navy"}`}>
+                      {doc.title} {doc.status === "ARCHIVED" && <span className="text-xs font-bold">(ARCHIVED)</span>}
+                    </p>
                     <p className="text-xs text-slate-500">Type: {doc.type} | Version: {doc.currentVersion}</p>
                   </div>
                   <div className="flex items-center gap-2">

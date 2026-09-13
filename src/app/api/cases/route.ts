@@ -1,40 +1,49 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth/rbac";
-import { evaluateAccess } from "@/lib/auth/abac";
+import { getSessionUser } from "@/lib/auth/session";
 
-export async function GET() {
-  const auth = await requireSession();
-  if ("response" in auth) return auth.response;
+export async function POST(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const assignments = await prisma.caseAssignment.findMany({
-    where: { userId: auth.user.id },
-    include: { case: true },
-  });
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
-  const cases = assignments
-    .map((row) => {
-      const decision = evaluateAccess({
-        role: auth.user.role,
-        assigned: true,
-        caseClassification: row.case.classification,
-        action: "view_case",
-      });
-      if (!decision.allowed) return null;
-      return {
-        id: row.case.id,
-        caseNumber: row.case.caseNumber,
-        title: row.case.title,
-        station: row.case.station,
-        status: row.case.status,
-        classification: row.case.classification,
-        firNumber: row.case.firNumber,
-        cctnsRef: row.case.cctnsRef,
-        purpose: row.purpose,
-        fictionalNote: row.case.fictionalNote,
-      };
-    })
-    .filter(Boolean);
+  const { title, classification, firNumber, jurisdiction } = body;
 
-  return NextResponse.json({ cases, viewer: auth.user });
+  if (!title || !classification || !firNumber || !jurisdiction) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  // Generate a random Case Number
+  const caseNumber = `CR-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+
+  try {
+    const newCase = await prisma.caseRecord.create({
+      data: {
+        caseNumber,
+        title,
+        status: "OPEN",
+        classification,
+        firNumber,
+        station: jurisdiction,
+        summary: `Manually created case: ${title}`,
+        cctnsRef: `CCTNS-${Math.floor(Math.random() * 1000000)}`,
+        // Automatically assign the creator to the new case so they can view it
+        assignments: {
+          create: {
+            userId: user.id
+          }
+        }
+      }
+    });
+
+    return NextResponse.json({ success: true, case: newCase });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

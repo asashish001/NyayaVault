@@ -11,7 +11,7 @@ function secret() {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const rpm = Number(process.env.RATE_LIMIT_RPM ?? "120");
@@ -23,6 +23,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/images") ||
     pathname.startsWith("/favicon") ||
     PUBLIC_PATHS.includes(pathname)
   ) {

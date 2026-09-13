@@ -8,7 +8,7 @@ All people, stations, FIR numbers, and facts in the demo are **fictional**.
 
 ## Current phase
 
-Phase 0 scaffolding and Phase 1 (identity, RBAC/ABAC, seed data, audit) are implemented. Upload, ledger UI, OCR, sharing, RAG, and court export are scheduled in later phases. Navigation entries for later modules are labeled honestly.
+Phase 0 scaffolding and Phase 1 (identity, RBAC/ABAC, seed data, audit, OCR/IDP) are implemented. Upload, ledger UI, sharing, RAG, and court export are scheduled in later phases. Navigation entries for later modules are labeled honestly.
 
 See [`docs/IMPLEMENTATION_LOG.md`](docs/IMPLEMENTATION_LOG.md) for the living engineering record.
 
@@ -16,8 +16,12 @@ See [`docs/IMPLEMENTATION_LOG.md`](docs/IMPLEMENTATION_LOG.md) for the living en
 
 Prerequisites: Node.js 20+ and npm.
 
+## Set up local AI engine
+Double click setup-ai.bat (Windows) or run ./setup-ai.sh (Mac/Linux)
+Note: The AI models run 100% locally on your machine for absolute privacy. No cloud APIs are used.
+
 ```bash
-copy .env.example. env
+copy .env.example .env
 npm install
 npx prisma migrate dev --name phase1_init
 npm run db:seed

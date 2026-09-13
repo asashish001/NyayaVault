@@ -1,27 +1,31 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff, Lock, ShieldCheck, Link2, Bot, Info, ArrowRight, User, Landmark } from "lucide-react";
 
 const ACCOUNTS = [
-  { email: "io.mehra@nyayavault.demo", role: "IO (assigned WS-2026-0001)" },
-  { email: "sho.kapoor@nyayavault.demo", role: "SHO" },
-  { email: "forensic.nair@nyayavault.demo", role: "Forensic Expert" },
-  { email: "pp.sharma@nyayavault.demo", role: "Prosecutor" },
-  { email: "auditor.iyer@nyayavault.demo", role: "Judge / Auditor" },
-  { email: "admin@nyayavault.demo", role: "Admin (no case bypass)" },
-  { email: "io.unassigned@nyayavault.demo", role: "IO other case (deny demo)" },
+  { initials: "IM", bg: "bg-blue-300", text: "text-blue-900", email: "io.mehra@nyayavault.demo", role: "IO (assigned WS-2026-0001)" },
+  { initials: "SK", bg: "bg-green-300", text: "text-green-900", email: "sho.kapoor@nyayavault.demo", role: "SHO" },
+  { initials: "FN", bg: "bg-purple-300", text: "text-purple-900", email: "forensic.nair@nyayavault.demo", role: "Forensic Expert" },
+  { initials: "PP", bg: "bg-amber-300", text: "text-amber-900", email: "pp.sharma@nyayavault.demo", role: "Prosecutor" },
+  { initials: "AJ", bg: "bg-rose-300", text: "text-rose-900", email: "auditor.iyer@nyayavault.demo", role: "Judge / Auditor" },
+  { initials: "AD", bg: "bg-slate-300", text: "text-slate-900", email: "admin@nyayavault.demo", role: "Admin (no case bypass)" },
+  { initials: "IO", bg: "bg-teal-300", text: "text-teal-900", email: "io.unassigned@nyayavault.demo", role: "IO other case (deny demo)" },
 ];
+
+import logoImage from "../../public/logo.png";
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("io.mehra@nyayavault.demo");
   const [password, setPassword] = useState("demo1234!");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [mfa, setMfa] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,33 +55,95 @@ export function LoginForm() {
   }
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-8 px-4 py-12 lg:grid-cols-2">
-      <div className="text-navy">
-        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Ministry of Home Affairs theme · Demo</p>
-        <h1 className="mt-2 font-serif text-4xl">NyayaVault</h1>
-        <p className="mt-3 max-w-md text-slate-600">
-          Court-ready evidence-document intelligence: encrypted off-chain storage, hash-chain
-          integrity, chain of custody, and a cited case assistant. This prototype is not CCTNS,
-          ICJS, or e-Courts.
-        </p>
-        <ul className="mt-6 space-y-2 text-sm text-slate-600">
-          <li>
-            Password for all demo accounts: <code>demo1234!</code>
-          </li>
-          <li>
-            Demo OTP: <code>000000</code>
-          </li>
-          <li>Use the unassigned IO to show a denied, audited access attempt.</li>
-        </ul>
+    <div className="grid min-h-screen w-full lg:grid-cols-2">
+      
+      {/* LEFT SIDE: Branding and info (Z-INDEX 10) */}
+      <div className="relative p-10 lg:p-20 xl:p-28 flex flex-col justify-center z-[10]">
+        
+        <div className="relative z-[10]">
+          {/* Logo & Header */}
+          <div className="mb-12 flex flex-col items-start gap-2">
+            <Image src={logoImage} alt="NyayaVault" width={240} height={80} className="w-auto h-16 drop-shadow-md" unoptimized />
+          </div>
+
+          {/* Tagline */}
+          <h2 className="font-serif text-[42px] md:text-[54px] font-bold leading-tight tracking-tight mb-6">
+            <span className="text-[#0F294D] block">Secure Evidence.</span>
+            <span className="text-blue-600 block">Stronger Justice.</span>
+          </h2>
+
+          <p className="text-base text-slate-600 leading-relaxed max-w-md mb-8">
+            Court-ready evidence-document intelligence: encrypted off-chain storage, hash-chain integrity, chain of custody, and a cited case assistant. This prototype is not CCTNS, ICJS, or e-Courts.
+          </p>
+
+          {/* Feature Grid */}
+          <div className="grid grid-cols-4 gap-4 mb-8">
+             <div className="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 h-24">
+               <Lock className="h-6 w-6 text-blue-600 mb-2" />
+               <span className="text-[10px] font-bold text-[#0F294D] leading-tight">Encrypted<br/>Storage</span>
+             </div>
+             <div className="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 h-24">
+               <ShieldCheck className="h-6 w-6 text-blue-600 mb-2" />
+               <span className="text-[10px] font-bold text-[#0F294D] leading-tight">Hash-chain<br/>Integrity</span>
+             </div>
+             <div className="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 h-24">
+               <Link2 className="h-6 w-6 text-blue-600 mb-2" />
+               <span className="text-[10px] font-bold text-[#0F294D] leading-tight">Chain of<br/>Custody</span>
+             </div>
+             <div className="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 h-24">
+               <Bot className="h-6 w-6 text-blue-600 mb-2" />
+               <span className="text-[10px] font-bold text-[#0F294D] leading-tight">Case<br/>Assistant</span>
+             </div>
+          </div>
+
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex gap-4 max-w-md mt-12">
+            <div className="h-6 w-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Info className="h-4 w-4" />
+            </div>
+            <div className="text-sm">
+              <p className="font-bold text-blue-900 mb-1">Password for all demo accounts: demo1234!</p>
+              <p className="font-bold text-blue-800 mb-2">Demo OTP: 000000</p>
+              <p className="text-slate-600 text-xs">Use the unassigned IO to show a denied, audited access attempt.</p>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Secure sign-in</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={submit}>
-            <div className="space-y-1">
-              <Label htmlFor="email">Official demo ID</Label>
+
+      {/* RIGHT SIDE: Login Form (Z-INDEX 20) */}
+      <div className="relative p-8 lg:p-12 xl:p-20 flex flex-col justify-center items-center z-[20]">
+        
+        {/* Top Right Status Badge */}
+        <div className="absolute top-6 right-6 lg:top-10 lg:right-10 z-[50] flex flex-col items-end">
+          <div className="bg-[#0F294D]/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-bold shadow-lg border border-white/10">
+            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+            Demo Prototype
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1.5 font-bold tracking-widest uppercase">Not a live government system</p>
+        </div>
+
+        {/* Login Card Container */}
+        <div className="w-full max-w-md relative z-[30] bg-white rounded-[24px] p-8 md:p-12 shadow-sm border border-slate-100">
+        
+        {/* Form Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center border border-blue-100">
+            <User className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-xl text-[#0F294D]">Secure sign-in</h3>
+            <p className="text-sm text-slate-500">Access your NyayaVault demo account</p>
+          </div>
+        </div>
+
+        <form className="space-y-6" onSubmit={submit}>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-bold text-[#0F294D]">Official demo ID</Label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </div>
               <Input
                 id="email"
                 type="email"
@@ -85,62 +151,93 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="pl-10 h-12 bg-slate-50 border-slate-200 focus:bg-white"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-bold text-[#0F294D]">Password</Label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                 <Lock className="h-4 w-4" />
+              </div>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="pl-10 pr-10 h-12 bg-slate-50 border-slate-200 focus:bg-white text-lg tracking-widest"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          {mfa ? (
+            <div className="space-y-2">
+              <Label htmlFor="otp" className="text-xs font-bold text-[#0F294D]">MFA OTP (demo)</Label>
+              <Input
+                id="otp"
+                inputMode="numeric"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="000000"
+                required
+                className="h-12 bg-slate-50"
               />
             </div>
-            {mfa ? (
-              <div className="space-y-1">
-                <Label htmlFor="otp">MFA OTP (demo)</Label>
-                <Input
-                  id="otp"
-                  inputMode="numeric"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="000000"
-                  required
-                />
-              </div>
-            ) : null}
-            {error ? <p className="text-sm text-red-800">{error}</p> : null}
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? "Signing in…" : mfa ? "Verify OTP" : "Continue"}
-            </Button>
-          </form>
-          <div className="mt-6 border-t border-slate-100 pt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Demo accounts
-            </p>
-            <ul className="space-y-1 text-xs text-slate-600">
-              {ACCOUNTS.map((item) => (
-                <li key={item.email}>
-                  <button
-                    type="button"
-                    className="text-left text-navy underline-offset-2 hover:underline"
-                    onClick={() => {
-                      setEmail(item.email);
-                      setMfa(false);
-                      setOtp("");
-                    }}
-                  >
-                    {item.email}
-                  </button>
-                  <span className="text-slate-500"> — {item.role}</span>
-                </li>
-              ))}
-            </ul>
+          ) : null}
+          {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+          
+          <Button type="submit" disabled={busy} className="w-full h-12 bg-[#0F294D] hover:bg-[#0F294D]/90 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2">
+            {busy ? "Signing in…" : mfa ? "Verify OTP" : "Continue"} {!busy && !mfa && <ArrowRight className="h-4 w-4" />}
+          </Button>
+        </form>
+
+        {/* Demo Accounts List */}
+        <div className="mt-8 flex-1">
+          <div className="flex items-center gap-3 mb-4">
+             <div className="h-px bg-slate-200 flex-1"></div>
+             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+               <User className="h-3 w-3" /> DEMO ACCOUNTS
+             </p>
+             <div className="h-px bg-slate-200 flex-1"></div>
           </div>
-        </CardContent>
-      </Card>
+          
+          <ul className="space-y-2">
+            {ACCOUNTS.map((item) => (
+              <li key={item.email} className="flex flex-col sm:flex-row sm:items-center justify-between group">
+                <button
+                  type="button"
+                  className="flex items-center gap-3 text-left w-full"
+                  onClick={() => {
+                    setEmail(item.email);
+                    setMfa(false);
+                    setOtp("");
+                  }}
+                >
+                  <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[8px] font-bold ${item.bg} ${item.text}`}>
+                    {item.initials}
+                  </div>
+                  <span className="text-[13px] font-medium text-[#0F294D] group-hover:text-blue-600 transition-colors">
+                    {item.email}
+                  </span>
+                  <span className="hidden sm:inline-block text-[11px] text-slate-400 border-l border-slate-200 pl-3">
+                    {item.role}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        </div>
+      </div>
     </div>
   );
 }

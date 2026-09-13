@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { AiAssistant } from "@/components/AiAssistant";
 import { evaluateAccess } from "@/lib/auth/abac";
+import { CaseSelector } from "./CaseSelector";
 
 export default async function AssistantPage({
   searchParams
@@ -54,18 +55,9 @@ export default async function AssistantPage({
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium">Select Case Context:</label>
-            <form method="GET" className="flex-1 max-w-sm">
-              <select
-                name="caseId"
-                value={selectedCaseId}
-                onChange={(e) => e.target.form?.submit()}
-                className="w-full text-sm p-2 border border-slate-200 rounded focus:border-navy outline-none"
-              >
-                {viewableCases.map(c => (
-                  <option key={c.id} value={c.id}>{c.caseNumber} - {c.title}</option>
-                ))}
-              </select>
-            </form>
+            <div className="flex-1 max-w-sm">
+              <CaseSelector viewableCases={viewableCases} selectedCaseId={selectedCaseId} />
+            </div>
           </div>
 
           {selectedCaseId ? (

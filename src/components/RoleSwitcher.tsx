@@ -33,12 +33,12 @@ export function RoleSwitcher({ currentEmail }: { currentEmail: string }) {
   const current = users.find((u) => u.email === currentEmail);
 
   return (
-    <label className="flex items-center gap-2 text-xs text-slate-200">
+    <label className="flex items-center gap-2 text-xs text-slate-500 font-bold">
       <span className="hidden sm:inline">Present as</span>
       <select
         aria-label="Switch demo role"
         disabled={busy || users.length === 0}
-        className="max-w-[16rem] rounded border border-white/20 bg-navy-800 px-2 py-1 text-xs text-white"
+        className="max-w-[16rem] rounded border border-slate-200 bg-white px-2 py-1 text-xs text-[#0F294D] font-bold"
         value={current?.id ?? ""}
         onChange={(e) => onChange(e.target.value)}
       >

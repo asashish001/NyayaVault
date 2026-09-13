@@ -178,6 +178,7 @@ model Document {
   ocrData   OcrExtraction?
   custodyEvents CustodyEvent[]
   shareTokens ShareToken[]
+  chunks    DocumentChunk[]
 }
 
 model DocumentVersion {
@@ -274,4 +275,14 @@ model CustodyEvent {
 
   document      Document @relation(fields: [documentId], references: [id])
   actor         User     @relation(fields: [actorId], references: [id])
+}
+
+model DocumentChunk {
+  id          String   @id @default(cuid())
+  documentId  String
+  text        String
+  embedding   String   // JSON stringified array of floats
+  createdAt   DateTime @default(now())
+
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }

@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/LoginForm";
-import { DemoBanner } from "@/components/DemoBanner";
+import { NyayaVaultBackground } from "@/components/background/NyayaVaultBackground";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-slate-100">
-      <DemoBanner />
-      <Suspense fallback={<p className="p-8 text-sm text-slate-600">Loading sign-in…</p>}>
-        <LoginForm />
-      </Suspense>
-    </div>
+    <main className="min-h-screen w-full relative overflow-hidden">
+      <NyayaVaultBackground />
+      <div className="relative z-10">
+        <Suspense fallback={<p className="p-8 text-sm text-slate-600">Loading sign-in…</p>}>
+          <LoginForm />
+        </Suspense>
+      </div>
+    </main>
   );
 }

@@ -46,11 +46,20 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
   }
 }
 
+import { prisma } from "@/lib/db";
+
 export async function getSessionUser(): Promise<SessionUser | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+  const decoded = await verifySessionToken(token);
+  if (!decoded) return null;
+  
+  // Verify user still exists in the DB (prevents crashes after db:seed)
+  const exists = await prisma.user.findUnique({ where: { id: decoded.id } });
+  if (!exists) return null;
+  
+  return decoded;
 }
 
 export async function setSessionCookie(token: string) {
@@ -60,7 +69,6 @@ export async function setSessionCookie(token: string) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 8,
   });
 }
 

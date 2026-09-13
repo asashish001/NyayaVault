@@ -9,6 +9,10 @@
   --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
 }
 
+html {
+  font-size: 16px; /* Default browser size */
+}
+
 html,
 body {
   min-height: 100%;

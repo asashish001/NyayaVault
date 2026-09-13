@@ -8,9 +8,15 @@ function requireEnv(name: string): string {
   return value;
 }
 
+const globalForEnv = globalThis as unknown as { __DEV_SESSION_SECRET: string };
+const DEV_RANDOM_SECRET = globalForEnv.__DEV_SESSION_SECRET ?? Math.random().toString(36).substring(2) + Date.now().toString(36);
+if (process.env.NODE_ENV !== "production") {
+  globalForEnv.__DEV_SESSION_SECRET = DEV_RANDOM_SECRET;
+}
+
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "file:./dev.db",
-  sessionSecret: process.env.SESSION_SECRET ?? "replace-with-a-long-random-demo-secret-32chars",
+  sessionSecret: process.env.SESSION_SECRET ?? DEV_RANDOM_SECRET,
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   demoOtp: process.env.DEMO_OTP ?? "000000",
   demoRoleSwitch: (process.env.DEMO_ROLE_SWITCH ?? "true") === "true",

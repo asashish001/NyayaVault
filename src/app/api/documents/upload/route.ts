@@ -5,6 +5,7 @@ import { authorizeCase } from "@/lib/audit";
 import { getStorage } from "@/lib/storage";
 import { computeSha256, appendLedgerEvent } from "@/lib/integrity";
 import { validateUploadFile } from "@/lib/validators";
+import { processDocumentOcr } from "@/lib/ocr";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
       documentId: documentRecord.id,
       versionId: versionRecord.id,
       metadata: { fileName: file.name, hash: sha256Hash, size: file.size },
+      txClient: tx,
     });
 
     // Link ledger proof back to version
@@ -128,6 +130,11 @@ export async function POST(request: NextRequest) {
   // Write file to encrypted storage adapter (R5)
   const storage = getStorage();
   await storage.put(storageKey, buffer, file.type);
+
+  // Trigger OCR processing completely asynchronously so we return immediately
+  setTimeout(() => {
+    processDocumentOcr(documentRecord.id, versionNumber, buffer, file.type).catch(console.error);
+  }, 100);
 
   return NextResponse.json({ 
     success: true, 

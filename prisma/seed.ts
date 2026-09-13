@@ -12,6 +12,9 @@ async function main() {
   await prisma.shareToken.deleteMany();
   await prisma.ledgerEvent.deleteMany();
   await prisma.documentVersion.deleteMany();
+  await prisma.ocrExtraction.deleteMany();
+  await prisma.documentChunk.deleteMany();
+  await prisma.custodyEvent.deleteMany();
   await prisma.document.deleteMany();
   await prisma.caseAssignment.deleteMany();
   await prisma.accessPolicy.deleteMany();
@@ -105,7 +108,7 @@ async function main() {
       status: CaseStatus.UNDER_INVESTIGATION,
       classification: Classification.PROTECTED_VICTIM_WITNESS,
       summary:
-        "DEMO ONLY. Fictional enquiry into a reported street-harassment incident near Riverbank Market, Fictional Nagar. Protected-victim classification applies. Names, FIR number, station, and facts are invented for SIH 2026 PS 26190.",
+        "Case summary pending. Please upload evidence documents and click 'Generate AI Summary' to populate this field.",
     },
   });
 
@@ -119,7 +122,7 @@ async function main() {
       status: CaseStatus.OPEN,
       classification: Classification.INTERNAL,
       summary:
-        "DEMO ONLY. Unrelated fictional property enquiry used to demonstrate denied cross-case access.",
+        "Case summary pending. Please upload evidence documents and click 'Generate AI Summary' to populate this field.",
     },
   });
 

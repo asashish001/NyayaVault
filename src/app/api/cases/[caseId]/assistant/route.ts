@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase, writeAudit } from "@/lib/audit";
-import { generateContextAwarePrompt, mockLlmInference } from "@/lib/ai/assistant";
+import { generateContextAwarePrompt, mockLlmInference, performRealRagInference } from "@/lib/ai/assistant";
 
 export async function POST(
   request: NextRequest,
@@ -34,11 +34,21 @@ export async function POST(
     return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
   }
 
-  // 1. Generate Prompt & Context
-  const { prompt, docs } = await generateContextAwarePrompt(query, caseId);
-
-  // 2. Perform Mock Inference
-  const response = await mockLlmInference(query, docs);
+  // 1 & 2. Perform Inference
+  let response;
+  try {
+    // Attempt to use local LLM (Ollama / LM Studio)
+    response = await performRealRagInference(query, caseId);
+    
+    // If it returned the default connection error, throw so we can fallback
+    if (response.answer.includes("error occurred while communicating with the AI service")) {
+      throw new Error("Local LLM unreachable");
+    }
+  } catch (e) {
+    console.warn("Local LLM failed, falling back to mock inference...");
+    const { docs } = await generateContextAwarePrompt(query, caseId);
+    response = await mockLlmInference(query, docs);
+  }
 
   // 3. Log the AI Query to Audit Log
   await writeAudit({
