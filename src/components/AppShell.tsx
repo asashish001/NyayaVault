@@ -61,7 +61,7 @@ export function AppShell({
       <header className="fixed top-0 inset-x-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md">
 
         <div className="flex w-64 flex-col justify-center pl-6 gap-0.5 mt-1">
-          <Image src={logoImage} alt="NyayaVault" width={240} height={80} className="w-[190px] h-auto object-contain drop-shadow-sm shrink-0" unoptimized />
+          <Image src={logoImage} alt="NyayaVault" width={240} height={80} className="w-[190px] h-auto drop-shadow-sm" unoptimized />
         </div>
 
         {/* Middle: Search */}
@@ -86,23 +86,23 @@ export function AppShell({
             <span className="absolute right-0 top-0 block h-2 w-2 rounded-full border-2 border-[#0F294D] bg-red-500"></span>
           </button>
 
-          <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-[#0F294D] border border-slate-200">
+          <div className="flex items-center gap-3 border-l border-white/20 pl-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white border border-white/20">
               {initials}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-base font-bold text-[#0F294D]">IO — {userName}</p>
-              <p className="text-xs font-medium text-slate-500">WS-2026-0001</p>
+              <p className="text-base font-bold text-white">IO — {userName}</p>
+              <p className="text-xs font-medium text-slate-300">WS-2026-0001</p>
             </div>
-            <button className="ml-1 text-slate-400 hover:text-[#0F294D] transition-colors">
+            <button className="ml-1 text-slate-300 hover:text-white transition-colors">
               <ChevronDown className="h-4 w-4" />
             </button>
           </div>
 
           {/* Subtle sign out / switch role */}
-          <div className="border-l border-slate-200 pl-4 flex flex-col gap-1 items-start">
+          <div className="border-l border-white/20 pl-4 flex flex-col gap-1 items-start">
             <RoleSwitcher currentEmail={user.email} />
-            <button onClick={logout} className="text-xs font-bold text-slate-500 hover:text-red-500 underline ml-1 transition-colors">Sign out</button>
+            <button onClick={logout} className="text-xs text-slate-300 hover:text-red-400 underline ml-1 transition-colors">Sign out</button>
           </div>
         </div>
       </header>

@@ -10,7 +10,7 @@
 }
 
 html {
-  font-size: 16px; /* Default browser size */
+  font-size: 13px; /* Custom global scale as requested */
 }
 
 html,
