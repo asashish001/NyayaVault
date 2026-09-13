@@ -8,9 +8,9 @@ All people, stations, FIR numbers, and facts in the demo are **fictional**.
 
 ## Current phase
 
-Phase 0 scaffolding and Phase 1 (identity, RBAC/ABAC, seed data, audit, OCR/IDP) are implemented. Upload, ledger UI, sharing, RAG, and court export are scheduled in later phases. Navigation entries for later modules are labeled honestly.
+Most core features (identity, RBAC/ABAC, audit, upload, ledger UI, sharing, OCR, AI assistant, and court bundle export) are implemented and functional.
 
-See [`docs/IMPLEMENTATION_LOG.md`](docs/IMPLEMENTATION_LOG.md) for the living engineering record.
+See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living engineering record.
 
 ## Quick start
 
@@ -28,6 +28,11 @@ npm run db:seed
 npm test
 npm run dev
 ```
+
+> [!WARNING]
+> **Important Note for Evaluators:** During `npm install` and `prisma migrate dev`, Prisma will attempt to download its database engine binaries from its external CDN (`binaries.prisma.sh`). 
+> If you are on a strict corporate network or VPN, this download may fail with a **403 Forbidden** error. If Prisma fails to initialize, the app will return a **global 500 Error** (even on the login page) due to the middleware architecture.
+> **Fix:** Disconnect from your VPN/Proxy for the first run, or configure your terminal's `HTTP_PROXY` and `HTTPS_PROXY` variables.
 
 Open http://localhost:3000
 
@@ -57,22 +62,23 @@ Use the unassigned IO and the dashboard “Attempt restricted case” link to sh
 - **Auth:** HttpOnly JWT cookie, demo MFA OTP, presentation role switcher (audited)
 - **AuthZ:** RBAC + case assignment + classification ABAC on **server** routes and server-rendered pages
 - **Audit:** append-only `AuditLog` rows for login, allow, and deny
-- **Adapters (interfaces / mocks):** filesystem storage, hash-chain ledger, mock CCTNS/ICJS/e-Courts/e-Forensics/e-Prosecution, mock LLM (later)
+- **Adapters (interfaces / mocks):** filesystem storage, hash-chain ledger, mock CCTNS/ICJS/e-Courts/e-Forensics/e-Prosecution, local AI models
 
-Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 
 ## Features vs phase
 
 | Capability | Status |
 |---|---|
-| Demo login, MFA OTP, role switcher | Phase 1 |
-| Cases dashboard, seeded women-safety case | Phase 1 |
-| Server ABAC + denied-access audit | Phase 1 |
-| Upload / encrypted versions / SHA-256 | Phase 2 |
-| Hash-chain ledger UI + custody timeline | Phase 3 |
-| OCR, search, viewer | Phase 4 |
-| Share, watermark, redaction, court bundle | Phase 5 |
-| Cited Case Assistant | Phase 6 |
+| Demo login, MFA OTP, role switcher | Implemented |
+| Cases dashboard, seeded women-safety case | Implemented |
+| Server ABAC + denied-access audit | Implemented |
+| Upload / encrypted versions / SHA-256 | Implemented |
+| Hash-chain ledger UI, integrity, custody timeline | Implemented |
+| OCR, search, document viewer / review | Implemented |
+| Share, watermark, redaction | Implemented |
+| Cited Case Assistant (Local AI) | Implemented |
+| Court bundle export | Implemented |
 
 ## Environment variables
 
@@ -91,8 +97,7 @@ See `.env.example`. Never commit `.env`. Do not hard-code API keys. `LLM_MODE=mo
 
 - No real malware engine, KMS/HSM, or Class-3 DSC.
 - No live CCTNS/ICJS/e-Courts calls.
-- Documents are not uploaded yet (Phase 2).
-- AES-256 at rest is designed for the storage adapter in Phase 2.
+- AES-256 at rest currently uses a local filesystem storage adapter, not a remote KMS-backed bucket.
 
 ## License
 

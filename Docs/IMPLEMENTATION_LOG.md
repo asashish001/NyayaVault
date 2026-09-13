@@ -11,8 +11,8 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
 | Database & seed data | Completed | Agent | 2026-09-09 | SQLite + fictional cases |
 | Document ingestion | Completed | Agent | 2026-09-09 | Phase 2 (Upload, Validation, AES-256) |
 | Ledger & integrity | Completed | Agent | 2026-09-10 | Phase 3 (Hash chain & verification UI) |
-| OCR & search | Completed | Agent | 2026-09-10 | Phase 4 & 6 (IDP, regex fallback, global search) |
-| RAG assistant | Completed | Agent | 2026-09-10 | Phase 7 (Cited, access-filtered mock LLM) |
+| OCR & search | Completed | Agent | 2026-09-12 | Phase 4 & 6 (Local Vision AI, global search) |
+| RAG assistant | Completed | Agent | 2026-09-11 | Phase 7 (Local vector DB, true RAG LLM) |
 | Sharing & redaction | Completed | Agent | 2026-09-10 | Phase 6 (Secure token, watermark, redaction) |
 | Testing & demo | Completed | Agent | 2026-09-10 | Phase 9 (Eval metrics, unit & security tests) |
 | Documentation | Completed | Agent | 2026-09-10 | Implementation logs, Eval Report |
