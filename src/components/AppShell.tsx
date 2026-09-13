@@ -71,9 +71,9 @@ export function AppShell({
             <input
               type="text"
               placeholder="Search cases, documents, FIR numbers, or OCR text..."
-              className="w-full rounded-md border border-slate-200 bg-white py-2 pl-10 pr-12 text-base outline-none transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              className="w-full rounded-md border border-slate-200 bg-white py-2 pl-10 pr-12 text-base font-bold text-black outline-none transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-400 placeholder:font-normal placeholder:text-slate-400"
             />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-black">
               Ctrl K
             </span>
           </div>
@@ -86,23 +86,23 @@ export function AppShell({
             <span className="absolute right-0 top-0 block h-2 w-2 rounded-full border-2 border-[#0F294D] bg-red-500"></span>
           </button>
 
-          <div className="flex items-center gap-3 border-l border-white/20 pl-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white border border-white/20">
+          <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-black border border-slate-300">
               {initials}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-base font-bold text-white">IO — {userName}</p>
-              <p className="text-xs font-medium text-slate-300">WS-2026-0001</p>
+              <p className="text-base font-bold text-black">IO — {userName}</p>
+              <p className="text-xs font-bold text-black">WS-2026-0001</p>
             </div>
-            <button className="ml-1 text-slate-300 hover:text-white transition-colors">
-              <ChevronDown className="h-4 w-4" />
+            <button className="ml-1 text-black hover:text-slate-600 transition-colors">
+              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
             </button>
           </div>
 
           {/* Subtle sign out / switch role */}
-          <div className="border-l border-white/20 pl-4 flex flex-col gap-1 items-start">
+          <div className="border-l border-slate-200 pl-4 flex flex-col gap-1 items-start">
             <RoleSwitcher currentEmail={user.email} />
-            <button onClick={logout} className="text-xs text-slate-300 hover:text-red-400 underline ml-1 transition-colors">Sign out</button>
+            <button onClick={logout} className="text-xs font-bold text-black hover:text-red-600 underline ml-1 transition-colors">Sign out</button>
           </div>
         </div>
       </header>
