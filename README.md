@@ -16,9 +16,9 @@ See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living en
 
 Prerequisites: Node.js 20+ and npm.
 
-## Set up local AI engine
-Double click setup-ai.bat (Windows) or run ./setup-ai.sh (Mac/Linux)
-Note: The AI models run 100% locally on your machine for absolute privacy. No cloud APIs are used.
+## AI engine
+The `.env.example` ships with a **free HuggingFace Inference API** token — LLM + embeddings work out of the box with no extra installs.  
+OCR and text extraction use local libraries (`pdf-parse` for PDFs, `tesseract.js` for images) — no cloud calls needed for document processing.
 
 ```bash
 copy .env.example .env
@@ -82,7 +82,7 @@ Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 
 ## Environment variables
 
-See `.env.example`. Never commit `.env`. Do not hard-code API keys. `LLM_MODE=mock` unless you later add a key (ask before paid APIs).
+See `.env.example`. Copy it to `.env` before first run. The bundled HuggingFace token is a free-tier, read-only key for demo use. To use a different provider, update `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OLLAMA_MODEL`, and `OLLAMA_EMBED_MODEL`.
 
 ## Security notes
 

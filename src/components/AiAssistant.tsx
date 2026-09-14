@@ -19,11 +19,10 @@ export function AiAssistant({ caseId }: { caseId: string }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || !caseId) return;
+  async function sendMessage(text: string) {
+    if (!text.trim() || !caseId) return;
 
-    const userMsg = input.trim();
+    const userMsg = text.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
@@ -49,19 +48,20 @@ export function AiAssistant({ caseId }: { caseId: string }) {
     }
   }
 
-  return (
-    <Card className="flex flex-col h-[600px]">
-      <CardHeader className="border-b border-slate-100 bg-slate-50 shrink-0">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-navy flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-            AI Assistant
-          </CardTitle>
-          <Badge tone="navy">Secure / Logged</Badge>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">Queries are logged and restricted to OCR-extracted documents within this case.</p>
-      </CardHeader>
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await sendMessage(input);
+  }
 
+  const suggestions = [
+    "Summarize the key events in this case.",
+    "Who are the main suspects?",
+    "What locations are mentioned in the documents?",
+    "Are there any witness statements?"
+  ];
+
+  return (
+    <div className="flex flex-col h-full w-full bg-white">
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -83,6 +83,21 @@ export function AiAssistant({ caseId }: { caseId: string }) {
             </div>
           </div>
         ))}
+
+        {messages.length === 1 && !loading && (
+          <div className="flex flex-wrap gap-2 mt-4 ml-2">
+            {suggestions.map((suggestion, idx) => (
+              <button
+                key={idx}
+                onClick={() => sendMessage(suggestion)}
+                className="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-full hover:bg-slate-50 hover:border-slate-300 hover:text-navy transition-colors text-left"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && (
           <div className="flex justify-start">
             <div className="max-w-[80%] rounded-lg p-3 text-sm bg-slate-100 text-slate-500 border border-slate-200">
@@ -107,6 +122,6 @@ export function AiAssistant({ caseId }: { caseId: string }) {
           </Button>
         </form>
       </div>
-    </Card>
+    </div>
   );
 }

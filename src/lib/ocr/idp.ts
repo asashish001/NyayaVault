@@ -20,7 +20,7 @@ export type OcrResult = {
 };
 
 // Simple heuristic field extraction (simulating an NER model)
-function extractFields(text: string): { data: ExtractedFields; confidence: FieldConfidence } {
+function extractFields(text: string, docType: string): { data: ExtractedFields; confidence: FieldConfidence } {
   const data: ExtractedFields = {};
   const conf: FieldConfidence = {
     caseNumber: 0.9,
@@ -47,19 +47,57 @@ function extractFields(text: string): { data: ExtractedFields; confidence: Field
   const nameMatch = text.match(/Accused\s*[:\-]\s*([A-Za-z\s,]+)/i);
   if (nameMatch) {
     data.accusedNames = nameMatch[1].split(",").map((n) => n.trim());
-    conf.accusedNames = 0.55; // Deliberately low to trigger manual review
+    conf.accusedNames = 0.55; 
   }
 
-  // If we found nothing, let's just populate some demo data to show the UI
-  if (Object.keys(data).length === 0) {
-    data.caseNumber = "FIR-Unknown";
-    data.date = "DD-MM-YYYY";
-    data.policeStation = "Unknown PS";
-    data.accusedNames = ["Unidentified"];
-    conf.accusedNames = 0.45;
+  if (docType === "WITNESS_STATEMENT") {
+    // Try to find "My name is [Name]" or "Statement of [Name]" or "Signed, [Name]"
+    const witnessMatch = text.match(/(?:My name i[cs]|Statement of)\s+([A-Z][A-Za-z\s]+)(?:,|\.)/i) || text.match(/Signed,?\s*([A-Z][A-Za-z\s]+)/i) || text.match(/Cianed,?\s*([A-Z][A-Za-z\s]+)/i);
+    if (witnessMatch) {
+      data.accusedNames = [witnessMatch[1].trim()]; // reusing field for witness name
+      conf.accusedNames = 0.75;
+    }
+    
+    // Try to find Ref: or Case:
+    const refMatch = text.match(/(?:Ref|Case|FIR)\s*[:\-]?\s*([A-Z0-9\/\-]+)/i);
+    if (refMatch) {
+      data.caseNumber = refMatch[1].trim();
+      conf.caseNumber = 0.8;
+    }
   }
+
+  // If we couldn't find a date using "Date:", try to find any date pattern
+  if (!data.date) {
+    const looseDateMatch = text.match(/(\d{1,2}[\/\-\s][A-Za-z]+[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+    if (looseDateMatch) {
+      data.date = looseDateMatch[1].trim();
+      conf.date = 0.6;
+    }
+  }
+
+  // Remove mock fallbacks entirely. The system should only return what it actually found from the OCR text.
+  // If fields are empty, the user will have to fill them in manually during the "Manual Review" step.
 
   return { data, confidence: conf };
+}
+
+/**
+ * Extract text from a PDF buffer using pdf-parse.
+ * Returns the extracted text or null if extraction fails.
+ */
+async function extractPdfText(buffer: Buffer): Promise<string | null> {
+  try {
+    // Dynamic import to avoid issues if the module is missing
+    const pdfParse = (await import("pdf-parse")).default;
+    const result = await pdfParse(buffer);
+    if (result.text && result.text.trim().length > 0) {
+      return result.text.trim();
+    }
+    return null;
+  } catch (error) {
+    console.error("PDF text extraction error:", error);
+    return null;
+  }
 }
 
 export async function processDocument(
@@ -71,6 +109,7 @@ export async function processDocument(
   let overallConfidence = 0.8;
 
   if (mimeType.startsWith("image/")) {
+    // Image files: use Tesseract OCR
     try {
       const { data } = await Tesseract.recognize(buffer, "eng");
       rawText = data.text;
@@ -79,24 +118,24 @@ export async function processDocument(
       console.error("Tesseract error:", error);
       rawText = "[OCR Engine Error - Falling back to mock extraction]";
     }
+  } else if (mimeType === "application/pdf") {
+    // PDF files: extract embedded text directly (no OCR needed for typed/digital PDFs)
+    const pdfText = await extractPdfText(buffer);
+    if (pdfText) {
+      rawText = pdfText;
+      overallConfidence = 0.92; // High confidence for digitally-generated PDFs
+    } else {
+      // PDF had no extractable text (e.g., scanned image-only PDF)
+      rawText = `[PDF contained no extractable text — likely a scanned image]\nDocument Type: ${docType}`;
+      overallConfidence = 0.3;
+    }
   } else {
-    // For PDFs or unsupported types in this MVP, we fall back to a simulated extraction
-    rawText = `[Simulated OCR for PDF]
-Document Type: ${docType}
-FIR No: FIR-2026/089
-Date: 10-09-2026
-Police Station: Cyber Cell North
-Sections: 420, 468, 471 IPC
-Accused: Rajesh Kumar, Sunil Verma (Suspicious spelling)
-... (further text) ...`;
+    // Other unsupported types: fallback
+    rawText = `[Unsupported file type: ${mimeType}]\nDocument Type: ${docType}`;
+    overallConfidence = 0.2;
   }
 
-  const { data: extractedData, confidence: fieldConfidence } = extractFields(rawText);
-
-  // Randomize some confidence if it's the mock PDF to still show the review UI
-  if (!mimeType.startsWith("image/")) {
-    fieldConfidence.accusedNames = 0.51; // Low confidence triggers review
-  }
+  const { data: extractedData, confidence: fieldConfidence } = extractFields(rawText, docType);
 
   return {
     rawText,

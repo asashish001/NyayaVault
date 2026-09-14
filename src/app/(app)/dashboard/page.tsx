@@ -48,9 +48,9 @@ export default async function DashboardPage() {
                 <div className="h-14 w-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
                   <Folder className="h-7 w-7" />
                 </div>
-                <div className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer">
+                <Link href="/cases" className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer">
                   <ArrowRight className="h-4 w-4" />
-                </div>
+                </Link>
               </div>
               <div>
                 <p className="text-base font-bold text-[#0F294D] mb-2">Assigned cases</p>
@@ -68,9 +68,9 @@ export default async function DashboardPage() {
                 <div className="h-14 w-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
                   <Shield className="h-7 w-7" />
                 </div>
-                <div className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-emerald-500 hover:bg-emerald-100 transition-colors cursor-pointer">
+                <Link href="/integrity" className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-emerald-500 hover:bg-emerald-100 transition-colors cursor-pointer">
                   <ArrowRight className="h-4 w-4" />
-                </div>
+                </Link>
               </div>
               <div>
                 <p className="text-base font-bold text-[#0F294D] mb-2">Integrity status</p>
@@ -88,9 +88,9 @@ export default async function DashboardPage() {
                 <div className="h-14 w-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
                   <AlertTriangle className="h-7 w-7" />
                 </div>
-                <div className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors cursor-pointer">
+                <Link href="/audit" className="h-8 w-8 bg-slate-50 rounded-full flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors cursor-pointer">
                   <ArrowRight className="h-4 w-4" />
-                </div>
+                </Link>
               </div>
               <div>
                 <p className="text-base font-bold text-[#0F294D] mb-2">Denied access events</p>

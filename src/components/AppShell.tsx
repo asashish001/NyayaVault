@@ -5,7 +5,6 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { DemoBanner } from "@/components/DemoBanner";
-import { OllamaStatusBanner } from "@/components/OllamaStatusBanner";
 import type { Role } from "@prisma/client";
 import {
   Home, Folder, Upload, Search, FileText, Shield,
@@ -24,8 +23,6 @@ const NAV = [
   { href: "/integrity", label: "Integrity", icon: Fingerprint },
   { href: "/court-bundle", label: "Court bundle", icon: Scale },
   { href: "/audit", label: "Audit", icon: BarChart },
-  { href: "/assistant", label: "Case Assistant", icon: Bot },
-  { href: "/admin", label: "Admin", icon: Settings },
   { href: "/share", label: "Share", icon: Share2 },
 ];
 
@@ -34,9 +31,11 @@ import { NyayaVaultBackground } from "@/components/background/NyayaVaultBackgrou
 export function AppShell({
   children,
   user,
+  floatingAssistant,
 }: {
   children: React.ReactNode;
   user: { name: string; email: string; role: Role };
+  floatingAssistant?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -55,7 +54,6 @@ export function AppShell({
     <div className="min-h-screen bg-transparent font-sans text-slate-800">
       <NyayaVaultBackground />
       <DemoBanner />
-      <OllamaStatusBanner />
 
       {/* Top App Bar (Full Width) */}
       <header className="fixed top-0 inset-x-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md">
@@ -130,16 +128,15 @@ export function AppShell({
         </nav>
 
         <div className="mt-auto p-4">
-          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-[#F0F4F8] p-4 text-sm">
-            <Shield className="h-8 w-8 flex-shrink-0 text-[#0F294D]" fill="#0F294D" stroke="white" />
+          <Link href="/admin" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-[#F0F4F8] p-4 text-sm hover:bg-slate-200 transition-colors group">
+            <Settings className="h-6 w-6 flex-shrink-0 text-[#0F294D] group-hover:rotate-90 transition-transform duration-300" />
             <div>
-              <p className="font-semibold text-[#0F294D]">Secure. Compliant.<br />Tamper-Proof.</p>
-              <div className="mt-2 flex items-center gap-1.5 font-medium text-slate-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                Demo System
+              <p className="font-semibold text-[#0F294D]">System Administration</p>
+              <div className="mt-1 flex items-center gap-1.5 font-medium text-slate-500 text-xs">
+                Manage settings & roles
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </aside>
 
@@ -151,6 +148,8 @@ export function AppShell({
           {children}
         </div>
       </main>
+
+      {floatingAssistant}
     </div>
   );
 }

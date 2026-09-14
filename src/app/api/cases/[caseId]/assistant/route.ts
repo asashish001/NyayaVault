@@ -37,15 +37,15 @@ export async function POST(
   // 1 & 2. Perform Inference
   let response;
   try {
-    // Attempt to use local LLM (Ollama / LM Studio)
+    // Attempt to use HuggingFace Inference API (or any configured OpenAI-compatible provider)
     response = await performRealRagInference(query, caseId);
     
     // If it returned the default connection error, throw so we can fallback
     if (response.answer.includes("error occurred while communicating with the AI service")) {
-      throw new Error("Local LLM unreachable");
+      throw new Error("LLM provider unreachable");
     }
   } catch (e) {
-    console.warn("Local LLM failed, falling back to mock inference...");
+    console.warn("LLM provider failed, falling back to mock inference...");
     const { docs } = await generateContextAwarePrompt(query, caseId);
     response = await mockLlmInference(query, docs);
   }

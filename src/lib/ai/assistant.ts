@@ -70,28 +70,27 @@ export async function mockLlmInference(query: string, contextDocs: any[]): Promi
       }
     } else if (lowerQuery.includes("name") || lowerQuery.includes("accused") || lowerQuery.includes("who")) {
       if (lowerText.includes("accused") || lowerText.includes("name")) {
-        answer = "The names of the individuals involved are listed in the document's header section.";
+        answer = "The names of the individuals involved are listed in the document's header section or statement.";
         matchFound = true;
       }
     } else if (lowerQuery.includes("date") || lowerQuery.includes("when")) {
       if (lowerText.includes("date") || lowerText.includes("202")) {
-        answer = "The incident date is recorded in the initial report.";
+        answer = "The incident date is recorded in the initial report or statements.";
         matchFound = true;
       }
-    } else if (lowerQuery.includes("summary") || lowerQuery.includes("summarize")) {
-      answer = "This document appears to be an official police or court record detailing an incident under investigation.";
+    } else if (lowerQuery.includes("summary") || lowerQuery.includes("summarize") || lowerQuery.includes("statement")) {
+      answer = "The case files contain official police records and witness statements detailing the incident.";
       matchFound = true;
     }
 
     if (matchFound) {
       citations.push({ docId: doc.id, title: doc.title });
-      break;
     }
   }
 
   if (citations.length === 0) {
     answer = `I found information in the case files, but couldn't precisely extract an answer to "${query}". Here is a general reference.`;
-    citations.push({ docId: docsWithText[0].id, title: docsWithText[0].title });
+    citations.push(...docsWithText.map(d => ({ docId: d.id, title: d.title })));
   }
 
   await new Promise(resolve => setTimeout(resolve, 800));
@@ -129,10 +128,7 @@ export async function performRealRagInference(query: string, caseId: string): Pr
   });
 
   if (chunks.length === 0) {
-    return {
-      answer: "I do not have any searchable OCR text available for this case. Please ensure documents are uploaded and processed through the IDP pipeline.",
-      citations: []
-    };
+    throw new Error("No searchable OCR text chunks available. LLM embeddings might have failed.");
   }
 
   try {
