@@ -49,8 +49,8 @@ function ESignForm() {
   return (
     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full border-t-4 border-orange-500">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">National e-Sign Gateway</h1>
-        <p className="text-sm text-slate-500">Secure digital signing infrastructure</p>
+        <h1 className="text-2xl font-bold text-slate-800">e-Sign Gateway (Demo)</h1>
+        <p className="text-sm text-slate-500">Demo digital signature — cryptographic simulation</p>
       </div>
 
       <div className="bg-slate-50 p-4 rounded text-sm mb-6 border border-slate-200">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,24 +15,49 @@ type SearchResult = {
   status: string;
 };
 
-export default function SearchPage() {
-  const [query, setQuery] = useState("");
+function SearchContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const qParam = searchParams.get("q") || "";
+
+  const [query, setQuery] = useState(qParam);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!query || query.length < 2) return;
+  useEffect(() => {
+    setQuery(qParam);
+    if (!qParam.trim()) {
+      setResults([]);
+      setHasSearched(false);
+      return;
+    }
 
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setResults(data.results || []);
-    } finally {
-      setLoading(false);
+    let isMounted = true;
+    async function doSearch() {
+      setLoading(true);
+      setHasSearched(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(qParam.trim())}`);
+        const data = await res.json();
+        if (isMounted) setResults(data.results || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    doSearch();
+    return () => { isMounted = false; };
+  }, [qParam]);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!query.trim()) {
+      router.push("/search");
+    } else {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   }
 
@@ -92,10 +118,9 @@ export default function SearchPage() {
                       <div className="mt-3 p-3 bg-slate-50 text-sm text-slate-600 font-mono rounded border border-slate-100 line-clamp-3">
                         <span className="font-semibold text-slate-400 select-none mr-2">OCR MATCH</span>
                         <span dangerouslySetInnerHTML={{
-                          __html: doc.snippet.replace(
-                            new RegExp(query, 'gi'),
-                            match => `<mark class="bg-yellow-200 text-slate-900 rounded px-1">${match}</mark>`
-                          )
+                          __html: (qParam.trim() && doc.snippet) 
+                            ? doc.snippet.replace(new RegExp(qParam.trim(), 'gi'), match => `<mark class="bg-yellow-200 text-slate-900 rounded px-1">${match}</mark>`) 
+                            : (doc.snippet || "")
                         }} />
                       </div>
                     )}
@@ -107,5 +132,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-slate-500">Loading search...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

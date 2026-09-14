@@ -12,6 +12,16 @@ export default async function DashboardPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
+  const roleDisplayMap: Record<string, string> = {
+    IO: "Investigating Officer",
+    SHO: "Station House Officer",
+    FORENSIC_EXPERT: "Forensic Expert",
+    PROSECUTOR: "Prosecutor",
+    JUDGE_AUDITOR: "Judge / Auditor",
+    ADMIN: "System Admin",
+  };
+  const displayRole = roleDisplayMap[user.role] || user.role;
+
 
   const assignments = await prisma.caseAssignment.findMany({
     where: { userId: user.id },
@@ -168,7 +178,7 @@ export default async function DashboardPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <p className="font-bold text-base text-[#0F294D]">IO — Kavya Mehra</p>
+                <p className="font-bold text-base text-[#0F294D] uppercase tracking-wide text-[14px]">{displayRole} — {user.name || "Kavya Mehra"}</p>
                 <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none font-bold text-xs px-2 py-0.5">Active</Badge>
               </div>
               <p className="text-xs font-medium text-slate-500 mt-1">Official ID: {user.email}</p>

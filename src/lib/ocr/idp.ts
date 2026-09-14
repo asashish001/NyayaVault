@@ -1,4 +1,18 @@
-import Tesseract from "tesseract.js";
+import Tesseract, { createWorker, Worker } from "tesseract.js";
+
+// Keep a global worker instance alive to drastically reduce OCR latency on subsequent uploads
+let tesseractWorkerPromise: Promise<Worker> | null = null;
+
+async function getTesseractWorker(): Promise<Worker> {
+  if (!tesseractWorkerPromise) {
+    tesseractWorkerPromise = (async () => {
+      console.log("Initializing persistent Tesseract worker...");
+      const worker = await createWorker("eng");
+      return worker;
+    })();
+  }
+  return tesseractWorkerPromise;
+}
 
 type ExtractedFields = {
   caseNumber?: string;
@@ -75,9 +89,6 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
     }
   }
 
-  // Remove mock fallbacks entirely. The system should only return what it actually found from the OCR text.
-  // If fields are empty, the user will have to fill them in manually during the "Manual Review" step.
-
   return { data, confidence: conf };
 }
 
@@ -87,7 +98,6 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
  */
 async function extractPdfText(buffer: Buffer): Promise<string | null> {
   try {
-    // Dynamic import to avoid issues if the module is missing
     const pdfParse = (await import("pdf-parse")).default;
     const result = await pdfParse(buffer);
     if (result.text && result.text.trim().length > 0) {
@@ -109,9 +119,9 @@ export async function processDocument(
   let overallConfidence = 0.8;
 
   if (mimeType.startsWith("image/")) {
-    // Image files: use Tesseract OCR
     try {
-      const { data } = await Tesseract.recognize(buffer, "eng");
+      const worker = await getTesseractWorker();
+      const { data } = await worker.recognize(buffer);
       rawText = data.text;
       overallConfidence = data.confidence / 100;
     } catch (error) {

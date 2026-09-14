@@ -138,7 +138,7 @@ export function LoginForm() {
 
           <form className="space-y-6" onSubmit={submit}>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold text-[#0F294D]">Official demo ID</Label>
+              <Label htmlFor="email" className="text-xs font-bold text-[#0F294D]">Demo account ID</Label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
@@ -199,41 +199,31 @@ export function LoginForm() {
             </Button>
           </form>
 
-          {/* Demo Accounts List */}
+          {/* Demo Accounts Selector */}
           <div className="mt-8 flex-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px bg-slate-200 flex-1"></div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                <User className="h-3 w-3" /> DEMO ACCOUNTS
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1 whitespace-nowrap">
+                <User className="h-3 w-3" /> DEMO MODE — SELECT ROLE
               </p>
               <div className="h-px bg-slate-200 flex-1"></div>
             </div>
 
-            <ul className="space-y-2">
+            <select
+              className="w-full h-12 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm font-medium text-[#0F294D] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setMfa(false);
+                setOtp("");
+              }}
+            >
               {ACCOUNTS.map((item) => (
-                <li key={item.email} className="flex flex-col sm:flex-row sm:items-center justify-between group">
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 text-left w-full"
-                    onClick={() => {
-                      setEmail(item.email);
-                      setMfa(false);
-                      setOtp("");
-                    }}
-                  >
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[8px] font-bold ${item.bg} ${item.text}`}>
-                      {item.initials}
-                    </div>
-                    <span className="text-[13px] font-medium text-[#0F294D] group-hover:text-blue-600 transition-colors">
-                      {item.email}
-                    </span>
-                    <span className="hidden sm:inline-block text-[11px] text-slate-400 border-l border-slate-200 pl-3">
-                      {item.role}
-                    </span>
-                  </button>
-                </li>
+                <option key={item.email} value={item.email}>
+                  {item.role} — {item.email}
+                </option>
               ))}
-            </ul>
+            </select>
           </div>
         </div>
       </div>

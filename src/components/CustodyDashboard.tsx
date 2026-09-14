@@ -182,9 +182,9 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                   </div>
 
                   <div className="pt-2 border-t border-slate-100">
-                    <p className="text-xs text-slate-500 mb-4">Clicking the button below will redirect you to the National e-Sign Gateway for Aadhaar OTP authentication.</p>
+                    <p className="text-xs text-slate-500 mb-4">Clicking the button below will redirect you to the simulated e-Sign Gateway for cryptographic authentication.</p>
                     <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-                      Authenticate via e-Sign Gateway
+                      Authenticate via e-Sign Gateway (Demo)
                     </Button>
                   </div>
                 </form>
