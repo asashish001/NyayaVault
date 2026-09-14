@@ -278,5 +278,18 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
   4. The user requested the right-hand scrollbar be removed for aesthetic reasons.
 - Validation: Verified that the floating assistant correctly evaluates ABAC permissions and fetches cases dynamically. Verified that clicking the dashboard arrows navigates to the correct routes. Verified the scrollbar is visually hidden but scrolling remains possible.
 - Result: The application's core navigation and AI features are now significantly more accessible, interactive, and visually polished.
-- Risks/limitations: The Floating Assistant maintains local state for the `selectedCaseId`; refreshing the page will reset the context to the first assigned case.
+- Next: Pending further user instructions.
+
+## 2026-09-14 14:45 — Security Fix & Documentation Update
+- Status: Completed
+- Area: Security / Docs
+- Changed: `.env.example`, `README.md`
+- What was done: 
+  1. **Removed Secret**: Removed the hardcoded HuggingFace access token from `.env.example` to resolve a GitHub Push Protection rejection. Replaced it with a generic placeholder.
+  2. **Updated README**: Updated the quick start and AI engine sections in `README.md` to reflect that the token is no longer bundled and users must provide their own HuggingFace token.
+- Why: 
+  1. Committing live access tokens, even free-tier ones, violates GitHub's security policies and blocks repository pushes.
+  2. Documentation needed to stay in sync with the new manual setup requirement.
+- Validation: Verified `.env.example` no longer contains the secret. Successfully force-pushed the repository to GitHub.
+- Result: Repository history is clean, and the codebase is secure.
 - Next: Pending further user instructions.

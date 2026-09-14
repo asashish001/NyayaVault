@@ -17,7 +17,15 @@ See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living en
 Prerequisites: Node.js 20+ and npm.
 
 ## AI engine
-The `.env.example` ships with a **free HuggingFace Inference API** token — LLM + embeddings work out of the box with no extra installs.  
+The AI features use the **HuggingFace Inference API**. You must provide your own HuggingFace access token in the `.env` file for the LLM and embeddings to work.
+
+**How to get a free HuggingFace Token:**
+1. Create a free account at [HuggingFace](https://huggingface.co/join).
+2. Go to your [Access Tokens page](https://huggingface.co/settings/tokens).
+3. Click **Create new token** (a "Read" token is sufficient).
+4. Copy the generated token (it starts with `hf_...`).
+5. Open your `.env` file and set `OPENAI_API_KEY="your_token_here"`.
+
 OCR and text extraction use local libraries (`pdf-parse` for PDFs, `tesseract.js` for images) — no cloud calls needed for document processing.
 
 ```bash
@@ -82,7 +90,7 @@ Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 
 ## Environment variables
 
-See `.env.example`. Copy it to `.env` before first run. The bundled HuggingFace token is a free-tier, read-only key for demo use. To use a different provider, update `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OLLAMA_MODEL`, and `OLLAMA_EMBED_MODEL`.
+See `.env.example`. Copy it to `.env` before first run. You must add your own HuggingFace token to `OPENAI_API_KEY` for the AI assistant to work. To use a different provider, update `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OLLAMA_MODEL`, and `OLLAMA_EMBED_MODEL`.
 
 ## Security notes
 
