@@ -23,7 +23,7 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
 - Area: DevOps
 - Changed: `package.json`, `.gitignore`, `.env.example`, `LICENSE`, `next.config.ts`, `tsconfig.json`, `prisma/schema.prisma`, `docs/*`, `README.md`
 - What was done: Initialized a single Next.js App Router repository with Prisma/SQLite, adapter placeholders, MIT license, and required documentation set.
-- Why: SIH prototype must run locally with one stack; product specs already exist under `Docs/`.
+- Why: prototype must run locally with one stack; product specs already exist under `Docs/`.
 - Validation: Not yet tested (dependencies not installed at log time)
 - Result: Files created; install/migrate pending
 - Risks/limitations: Directory previously contained only planning markdown
@@ -159,7 +159,7 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
 - Validation: Cross-referenced `04_TASKS.md` tasks against the logs and confirmed all PRD workflows are functional.
 - Result: Codebase is demo-ready.
 - Risks/limitations: None.
-- Next: Live presentation to the SIH judges.
+- Next: Live presentation to the judges.
 
 ## 2026-09-11 11:50 — IDP & OCR Integrated
 - Status: Completed

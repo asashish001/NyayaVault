@@ -1,5 +1,5 @@
 # Technical Design Document
-## SIH 2026 — PS 26190: Secure Digital Document Management System
+## : Secure Digital Document Management System
 
 ---
 
@@ -64,7 +64,7 @@ overwritten.
 - **On-chain / ledger:** `doc_id`, `version`, `SHA-256 hash`, `timestamp`, `signer_ref`, `prev_version_hash`, `event_type`, optional `merkle_root`.
 - **Batching:** anchor in batches (e.g., every N minutes / M records) using a Merkle root to avoid write-throughput bottlenecks.
 - **Verification:** recompute current file hash → compare to anchored hash → `Verified` / `Mismatch` / `Pending Anchor`.
-- **Tech options:** Hyperledger Fabric or Quorum (permissioned) for production framing; a simple hash-chained ledger (each record embeds previous hash) is acceptable and defensible for the SIH prototype.
+- **Tech options:** Hyperledger Fabric or Quorum (permissioned) for production framing; a simple hash-chained ledger (each record embeds previous hash) is acceptable and defensible for the prototype.
 - **If ledger is unavailable:** hash + event go to a durable pending queue; document is marked "Pending Anchor," never falsely "Verified."
 
 ## 5. AI / RAG Design
@@ -120,7 +120,7 @@ Use neutral, non-judgmental language. Do not infer guilt or innocence.
 
 *(See `06_DATA_MODEL_AND_API.md` for full field-level schema and API contracts.)*
 
-## 7. Tech Stack (practical, SIH-feasible)
+## 7. Tech Stack (practical, feasible)
 
 | Layer | Choice |
 |---|---|

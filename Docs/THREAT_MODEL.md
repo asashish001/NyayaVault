@@ -1,6 +1,6 @@
 # Threat model — NyayaVault
 
-Derived from `Docs/05_THREAT_MODEL.md`. Residual risks are honest: this is an SIH prototype.
+Derived from `Docs/05_THREAT_MODEL.md`. Residual risks are honest: this is an prototype.
 
 ## Conventional threats
 

@@ -1,5 +1,5 @@
 # Evaluation & Testing Report (Phase 9)
-## NyayaVault SIH 2026 - PS 26190
+## NyayaVault 
 
 This report summarizes the results of the functional, security, and AI evaluation tests run against the NyayaVault MVP prototype.
 

@@ -85,7 +85,7 @@ function ESignForm() {
 
       <div className="mt-8 text-center text-xs text-slate-400">
         <p>Powered by Mock ESP Infrastructure</p>
-        <p>SIH 2026 Prototype</p>
+        <p> Prototype</p>
       </div>
     </div>
   );

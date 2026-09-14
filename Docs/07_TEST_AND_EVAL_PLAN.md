@@ -1,5 +1,5 @@
 # Test & Evaluation Plan
-## SIH 2026 — PS 26190
+## 
 
 Judges respond better to measured evaluation than to feature claims alone. Track these
 metrics and present them as an "Evaluation" slide.

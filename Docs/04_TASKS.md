@@ -1,5 +1,5 @@
 # Task Breakdown & Build Plan
-## SIH 2026 — PS 26190
+## 
 
 Build order follows one working **vertical slice first**, then layered enhancement. Each phase
 should end with something demoable.

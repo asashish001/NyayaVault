@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## SIH 2026 — PS 26190: Secure Digital Document Management System for Legal and Investigation Documents
+## : Secure Digital Document Management System for Legal and Investigation Documents
 
 **Sponsor:** Ministry of Home Affairs (NCRB, Women Safety Division)
 **Category:** Software | Theme: Blockchain & Cybersecurity
@@ -42,7 +42,7 @@ e-Courts, e-Sakshya, e-Prosecution) rather than replacing them.
 | Auditability | Every view/download/share/custody-transfer event logged, append-only |
 | Legal defensibility | Exportable "Proof of Integrity" + audit report per case |
 
-## 4. Non-Goals (Out of Scope for MVP / Hackathon)
+## 4. Non-Goals (Out of Scope for MVP / )
 
 - Production integration with CCTNS/ICJS/e-Courts (mocked only).
 - Real Class-3 DSC/eSign PKI onboarding (simulated signing only).

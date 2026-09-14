@@ -1,6 +1,6 @@
 # NyayaVault architecture
 
-Prototype for SIH 2026 PS 26190. Complementary document-integrity layer — **not** a replacement for ICJS, CCTNS, e-Courts, e-Sakshya, e-Prosecution, or e-Forensics.
+Prototype for . Complementary document-integrity layer — **not** a replacement for ICJS, CCTNS, e-Courts, e-Sakshya, e-Prosecution, or e-Forensics.
 
 ## Component diagram
 
@@ -60,7 +60,7 @@ flowchart TB
 
 ## Runtime choice
 
-A **single Next.js process** keeps `npm run dev` simple for the hackathon. Storage, OCR, LLM, search, and ledger are **adapter interfaces** so Postgres, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
+A **single Next.js process** keeps `npm run dev` simple for the . Storage, OCR, LLM, search, and ledger are **adapter interfaces** so Postgres, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
 
 ## Data flow (Phase 1)
 

@@ -13,7 +13,7 @@ const serif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "NyayaVault — SIH 2026 PS 26190",
+  title: "NyayaVault — ",
   description:
     "Fictional demo of a court-ready evidence-document intelligence platform. Not a live government system.",
 };

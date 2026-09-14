@@ -1,5 +1,5 @@
 # Data Model & API Contracts
-## SIH 2026 — PS 26190
+## 
 
 Define these contracts **before** building dependent modules (Rule R32).
 

@@ -1,9 +1,9 @@
 # Engineering Rules & Constraints
-## SIH 2026 — PS 26190
+## 
 
 These rules bind every contributor (human or AI coding agent) working on this project. They
 exist to prevent scope creep, security shortcuts, and over-claiming — the three most common
-reasons similar SIH projects lose credibility with judges.
+reasons similar projects lose credibility with judges.
 
 ---
 

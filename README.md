@@ -1,8 +1,9 @@
-# NyayaVault — SIH 2026 PS 26190
+# NyayaVault: Secure Digital Document Management System for legal and investigation documents 
+**Smart India Hackathon 2026 — Problem Statement ID: SIH26190**  
+**Team:** S.W.O.R.D.  
+**Tagline:** Secure Evidence. Stronger Justice.
 
-**Secure Digital Document Management System for legal and investigation documents**
-
-NyayaVault is a Smart India Hackathon prototype. It is a court-ready evidence-document intelligence platform: encrypted off-chain storage, SHA-256 version integrity, an append-only audit trail, a tamper-evident hash chain (not a public blockchain), OCR, controlled RAG, and privacy-aware sharing. It is **not** a national ICJS/CCTNS replacement.
+NyayaVault is a prototype. It is a court-ready evidence-document intelligence platform: encrypted off-chain storage, SHA-256 version integrity, an append-only audit trail, a tamper-evident hash chain (not a public blockchain), OCR, controlled RAG, and privacy-aware sharing. It is **not** a national ICJS/CCTNS replacement.
 
 All people, stations, FIR numbers, and facts in the demo are **fictional**.
 

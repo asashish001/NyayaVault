@@ -1,5 +1,5 @@
 # Threat Model
-## SIH 2026 — PS 26190
+## 
 
 A dedicated threat-model slide/document is expected by cybersecurity-track judges. This
 covers conventional security threats plus AI/LLM-specific threats.
