@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function CreateCaseModal() {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -21,11 +23,12 @@ export function CreateCaseModal() {
     });
 
     if (res.ok) {
+      toast.success("Case created successfully!");
       setOpen(false);
       router.refresh();
     } else {
       const data = await res.json();
-      alert("Error: " + data.error);
+      toast.error("Error: " + data.error);
     }
     setLoading(false);
   }

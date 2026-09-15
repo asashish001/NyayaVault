@@ -5,11 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Circle, FileText, Check, FileCheck } from "lucide-react";
 
+import { useToast } from "@/components/ui/ToastProvider";
+
 type CaseOption = { id: string; caseNumber: string; title: string };
 
 type PipelineState = "idle" | "uploading" | "polling" | "done";
 
 export function UploadForm({ cases }: { cases: CaseOption[] }) {
+  const toast = useToast();
   const [caseId, setCaseId] = useState(cases.length > 0 ? cases[0].id : "");
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -80,11 +83,11 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
         // We do this client-side fire-and-forget because Next.js immediately kills background setTimeouts on API response
         fetch(`/api/documents/${data.documentId}/process-ocr`, { method: "POST" }).catch(console.error);
       } else {
-        alert("Upload failed: " + data.error);
+        toast.error("Upload failed: " + data.error);
         setState("idle");
       }
     } catch (err) {
-      alert("Network error occurred.");
+      toast.error("Network error occurred.");
       setState("idle");
     }
   }

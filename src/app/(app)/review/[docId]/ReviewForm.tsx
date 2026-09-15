@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function ReviewForm({ docId, initialData }: { docId: string, initialData: string }) {
+  const toast = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   
@@ -52,10 +54,11 @@ export function ReviewForm({ docId, initialData }: { docId: string, initialData:
       body: JSON.stringify({ correctedFields: fields })
     });
     if (res.ok) {
+      toast.success("Document approved successfully!");
       router.push("/review");
       router.refresh();
     } else {
-      alert("Failed to approve");
+      toast.error("Failed to approve document");
       setBusy(false);
     }
   }

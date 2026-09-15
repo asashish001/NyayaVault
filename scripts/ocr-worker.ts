@@ -7,7 +7,7 @@ import { processDocument } from "../src/lib/ocr/idp";
 async function writeAuditMock({ action, result, caseId, documentId, reason }: any) {
   await prisma.auditLog.create({
     data: {
-      actorId: "SYSTEM", // System automated task
+      actorId: null, // Must be null, not "SYSTEM", because it's a foreign key to the User table
       role: "SYSTEM",
       action,
       result,

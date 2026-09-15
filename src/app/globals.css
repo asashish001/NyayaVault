@@ -22,11 +22,13 @@ body {
   background: #f1f5f9;
   color: #0f172a;
   font-family: var(--font-sans);
+}
+
+/* Utility to hide scrollbar for specific decorative containers */
+.hide-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

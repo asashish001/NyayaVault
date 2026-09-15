@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { useToast } from "@/components/ui/ToastProvider";
+
 type DocInfo = {
   id: string;
   title: string;
@@ -27,6 +29,7 @@ type CustodyEvent = {
 };
 
 export function CustodyDashboard({ documents, currentDept }: { documents: DocInfo[], currentDept: string }) {
+  const toast = useToast();
   const [selectedDocId, setSelectedDocId] = useState<string>("");
   const [events, setEvents] = useState<CustodyEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,10 +88,12 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
       const data = await res.json();
 
       if (res.ok) {
-        alert("Custody successfully transferred with cryptographic e-Sign!");
-        window.location.href = "/custody"; // clear URL params and reload
+        toast.success("Custody successfully transferred with cryptographic e-Sign!");
+        setTimeout(() => {
+          window.location.href = "/custody"; // clear URL params and reload
+        }, 1500);
       } else {
-        alert("Transfer failed: " + data.error);
+        toast.error("Transfer failed: " + data.error);
       }
     } finally {
       setTransferring(false);

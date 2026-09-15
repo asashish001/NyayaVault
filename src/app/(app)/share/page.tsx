@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Copy, ExternalLink } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type DocInfo = {
   id: string;
@@ -13,6 +14,7 @@ type DocInfo = {
 };
 
 export default function ShareDashboard() {
+  const toast = useToast();
   const [documents, setDocuments] = useState<DocInfo[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
@@ -68,7 +70,7 @@ export default function ShareDashboard() {
       if (res.ok) {
         setShareUrl(data.shareUrl);
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } finally {
       setSharing(false);
@@ -216,7 +218,7 @@ export default function ShareDashboard() {
                 <Button 
                   onClick={() => {
                     navigator.clipboard.writeText(shareUrl);
-                    alert("Copied to clipboard!");
+                    toast.success("Copied to clipboard!");
                   }}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >

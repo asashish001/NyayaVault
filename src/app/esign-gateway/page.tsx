@@ -2,8 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/ToastProvider";
 
 function ESignForm() {
+  const toast = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -16,9 +18,9 @@ function ESignForm() {
 
   useEffect(() => {
     if (!docId || !toDept || !reason) {
-      alert("Missing required parameters from application.");
+      toast.error("Missing required parameters from application.");
     }
-  }, [docId, toDept, reason]);
+  }, [docId, toDept, reason, toast]);
 
   async function handleSign(e: React.FormEvent) {
     e.preventDefault();
@@ -37,11 +39,11 @@ function ESignForm() {
         // Redirect back to the App's callback URL
         router.push(`/custody?signature=${data.jwt}&docId=${docId}&toDept=${encodeURIComponent(toDept!)}&reason=${encodeURIComponent(reason!)}`);
       } else {
-        alert("Authentication failed: " + data.error);
+        toast.error("Authentication failed: " + data.error);
         setLoading(false);
       }
     } catch (error) {
-      alert("Network error.");
+      toast.error("Network error.");
       setLoading(false);
     }
   }

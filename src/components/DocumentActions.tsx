@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
+import { useToast } from "@/components/ui/ToastProvider";
+
 export function DocumentActions({ docId }: { docId: string }) {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
@@ -18,16 +21,16 @@ export function DocumentActions({ docId }: { docId: string }) {
       
       if (!res.ok) {
         if (data.status === "LEGAL_HOLD_ACTIVE") {
-          alert(`BLOCKED: ${data.error}`);
+          toast.error(`BLOCKED: ${data.error}`);
         } else {
-          alert(`ERROR: ${data.error}`);
+          toast.error(`ERROR: ${data.error}`);
         }
       } else {
-        alert("Document archived successfully.");
-        window.location.reload();
+        toast.success("Document archived successfully.");
+        setTimeout(() => window.location.reload(), 1000);
       }
     } catch (e) {
-      alert("Network error.");
+      toast.error("Network error.");
     } finally {
       setLoading(false);
     }

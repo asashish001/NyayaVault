@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function GenerateSummaryButton({ caseId }: { caseId: string }) {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -18,12 +20,13 @@ export function GenerateSummaryButton({ caseId }: { caseId: string }) {
       const data = await res.json();
       
       if (data.error) {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       } else {
+        toast.success("AI Summary generated!");
         router.refresh();
       }
     } catch (err) {
-      alert("Failed to reach server");
+      toast.error("Failed to reach server");
     } finally {
       setLoading(false);
     }

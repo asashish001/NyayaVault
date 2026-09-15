@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { useToast } from "@/components/ui/ToastProvider";
+
 type DocOption = {
   id: string;
   title: string;
@@ -20,6 +22,7 @@ type CaseGroup = {
 };
 
 export function IntegrityDashboard({ cases }: { cases: CaseGroup[] }) {
+  const toast = useToast();
   const [selectedDocId, setSelectedDocId] = useState<string>("");
   const [verifying, setVerifying] = useState(false);
   const [tampering, setTampering] = useState(false);
@@ -63,7 +66,7 @@ export function IntegrityDashboard({ cases }: { cases: CaseGroup[] }) {
     setTampering(true);
     try {
       await fetch(`/api/documents/${selectedDocId}/tamper`, { method: "POST" });
-      alert("Document corrupted. Run verification again to see the result.");
+      toast.warning("Document corrupted. Run verification again to see the result.");
       setResult(null);
     } finally {
       setTampering(false);

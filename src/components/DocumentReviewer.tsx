@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { useToast } from "@/components/ui/ToastProvider";
+
 type ReviewDoc = {
   id: string;
   title: string;
@@ -13,6 +15,7 @@ type ReviewDoc = {
 };
 
 export function DocumentReviewer({ pendingDocs }: { pendingDocs: ReviewDoc[] }) {
+  const toast = useToast();
   const [selectedDocId, setSelectedDocId] = useState<string>("");
   const [ocrData, setOcrData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +58,7 @@ export function DocumentReviewer({ pendingDocs }: { pendingDocs: ReviewDoc[] }) 
       if (data.success) {
         await loadOcrData(selectedDocId);
       } else {
-        alert("Processing failed: " + data.error);
+        toast.error("Processing failed: " + data.error);
       }
     } finally {
       setProcessing(false);
@@ -72,10 +75,10 @@ export function DocumentReviewer({ pendingDocs }: { pendingDocs: ReviewDoc[] }) 
         body: JSON.stringify({ correctedFields: formData })
       });
       if (res.ok) {
-        alert("Document approved successfully!");
-        window.location.reload();
+        toast.success("Document approved successfully!");
+        setTimeout(() => window.location.reload(), 1000);
       } else {
-        alert("Failed to approve document.");
+        toast.error("Failed to approve document.");
       }
     } finally {
       setSaving(false);
