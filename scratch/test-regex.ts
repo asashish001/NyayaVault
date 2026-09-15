@@ -1,6 +1,6 @@
-function extractFields(text, docType) {
-  const data = {};
-  const conf = {
+function extractFields(text: string, docType: string) {
+  const data: Record<string, any> = {};
+  const conf: Record<string, number> = {
     caseNumber: 0.9,
     date: 0.85,
     policeStation: 0.95,

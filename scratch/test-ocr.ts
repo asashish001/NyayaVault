@@ -1,5 +1,5 @@
-const { createWorker } = require('tesseract.js');
-const fs = require('fs');
+import { createWorker } from 'tesseract.js';
+import * as fs from 'fs';
 
 async function test() {
   console.log("Creating worker...");

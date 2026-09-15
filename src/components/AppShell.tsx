@@ -242,18 +242,6 @@ export function AppShell({
             )}
           </div>
 
-          <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-black border border-slate-300">
-              {initials}
-            </div>
-            <div className="hidden md:flex flex-col text-left">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">{roleDisplayMap[user.role] || user.role}</p>
-              <p className="text-sm font-bold text-[#0F294D] leading-none">{userName}</p>
-            </div>
-            <button className="ml-1 text-black hover:text-slate-600 transition-colors">
-              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
-            </button>
-          </div>
 
           {/* Subtle sign out / switch role */}
           <div className="border-l border-slate-200 pl-4 flex flex-col gap-1 items-start">

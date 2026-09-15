@@ -681,3 +681,22 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
 - Validation: Verified the regex extracts cleanly without newlines. Verified the share confirmation card renders correctly.
 - Result: Highly polished UX for external sharing and completely clean OCR metadata extraction.
 - Next: Pending further user instructions.
+
+## 2026-09-15 19:50 — Tooling Consolidation, UX & Stability Overhaul
+- Status: Completed
+- Area: Architecture / UX / Stability
+- Changed: Root directory scripts, 10+ frontend components, `src/app/globals.css`, `src/app/api/cases/[caseId]/summary/route.ts`, `src/middleware.ts`, `scripts/ocr-worker.ts`
+- What was done: 
+  1. **Tooling Consolidation**: Standardized the repository completely on TypeScript. Removed obsolete Python scripts (`extract_assets.py`, `requirements.txt`) and migrated all root CommonJS/JS ad-hoc scripts to TypeScript files inside the `scratch/` directory.
+  2. **Global Toast Notifications**: Eradicated all jarring browser `alert()` popups and replaced them with a sleek, modern toast notification system across 10 frontend components.
+  3. **Scrollbar Usability Fix**: Restored visible scrollbars on long pages (like Audit/Case pages) to improve navigation, moving the hidden scrollbar logic to a specific `.hide-scrollbar` utility class.
+  4. **AI Summary Fallback**: Fixed a crash in the "Generate AI Summary" feature. It now safely falls back to generating a "Limited AI Mode" summary if the local LLM is unreachable, rather than crashing the UI.
+  5. **Middleware Crash Fix**: Fixed a Next.js build crash by correctly renaming the entry point in `src/middleware.ts` so the server compiles successfully.
+  6. **Background OCR Stability**: Fixed the database foreign key constraint errors (`AuditLog`) in the background OCR worker pipeline so documents process cleanly.
+- Why: 
+  - Centralizing on TypeScript eliminates CI/CD buildpack confusion where platforms assume a Python environment.
+  - UI polishing (Toasts, Scrollbars) vastly improves usability and modern application feel.
+  - Stability improvements ensure the MVP degrades gracefully without 500 errors during API failures or background processing.
+- Validation: Verified root directory cleanly contains only Next.js/TS configuration. UI navigation is visibly improved. Background OCR executes without database foreign key crashes.
+- Result: The application is now highly polished, robust, and correctly architected.
+- Next: Pending further user instructions.

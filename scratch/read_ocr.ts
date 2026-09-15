@@ -1,9 +1,11 @@
-const { PrismaClient } = require("@prisma/client");
+import { PrismaClient } from "@prisma/client";
 
 async function main() {
   const p = new PrismaClient();
   const d = await p.ocrExtraction.findFirst({ where: { document: { type: 'WITNESS_STATEMENT' } } });
-  console.log(d.rawText);
+  if (d) {
+    console.log(d.rawText);
+  }
   await p.$disconnect();
 }
 
