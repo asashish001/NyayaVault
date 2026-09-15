@@ -7,7 +7,7 @@ import { CheckCircle2, Loader2, Circle, FileText, Check, FileCheck } from "lucid
 
 type CaseOption = { id: string; caseNumber: string; title: string };
 
-type PipelineState = "idle" | "uploading" | "simulating" | "done";
+type PipelineState = "idle" | "uploading" | "polling" | "done";
 
 export function UploadForm({ cases }: { cases: CaseOption[] }) {
   const [caseId, setCaseId] = useState(cases.length > 0 ? cases[0].id : "");
@@ -17,24 +17,41 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
   const [state, setState] = useState<PipelineState>("idle");
   const [docId, setDocId] = useState("");
   
-  // Pipeline simulation step (0 to 6)
-  const [step, setStep] = useState(0);
+  const [uiStep, setUiStep] = useState(0);
+  const [actualStep, setActualStep] = useState(0);
 
+  // Catch up uiStep to actualStep smoothly
   useEffect(() => {
-    if (state === "simulating") {
-      const timer = setInterval(() => {
-        setStep((s) => {
-          if (s >= 5) {
-            clearInterval(timer);
-            setState("done");
-            return 6;
+    if (state === "polling" && uiStep < actualStep) {
+      const timer = setTimeout(() => {
+        setUiStep(s => Math.min(s + 1, actualStep));
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+    if (state === "polling" && uiStep === 6) {
+      setState("done");
+    }
+  }, [state, uiStep, actualStep]);
+
+  // Poll actual backend state
+  useEffect(() => {
+    if (state === "polling" && actualStep < 6 && docId) {
+      const timer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/documents/${docId}/status`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status !== "PROCESSING" || data.hasOcr) {
+              setActualStep(6);
+            }
           }
-          return s + 1;
-        });
-      }, 700);
+        } catch (e) {
+          console.error("Polling error", e);
+        }
+      }, 1000);
       return () => clearInterval(timer);
     }
-  }, [state]);
+  }, [state, actualStep, docId]);
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
@@ -55,8 +72,13 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
       const data = await res.json();
       if (res.ok) {
         setDocId(data.documentId);
-        setState("simulating");
-        setStep(0);
+        setState("polling");
+        setUiStep(0);
+        setActualStep(4); // Upload, Hash, Encrypt, Anchor are done synchronously
+        
+        // Explicitly trigger the heavy background OCR task
+        // We do this client-side fire-and-forget because Next.js immediately kills background setTimeouts on API response
+        fetch(`/api/documents/${data.documentId}/process-ocr`, { method: "POST" }).catch(console.error);
       } else {
         alert("Upload failed: " + data.error);
         setState("idle");
@@ -71,10 +93,11 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
     setState("idle");
     setFile(null);
     setTitle("");
-    setStep(0);
+    setUiStep(0);
+    setActualStep(0);
   }
 
-  if (state === "simulating" || state === "done") {
+  if (state === "polling" || state === "done") {
     return (
       <Card className="border-blue-100 shadow-md">
         <CardHeader className="bg-blue-50/50 border-b border-blue-100 pb-4">
@@ -85,12 +108,12 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <PipelineItem label="File received" active={step >= 0} done={step >= 1} />
-            <PipelineItem label="SHA-256 calculated" active={step >= 1} done={step >= 2} />
-            <PipelineItem label="Evidence encrypted" active={step >= 2} done={step >= 3} />
-            <PipelineItem label="Integrity proof recorded" active={step >= 3} done={step >= 4} />
-            <PipelineItem label="OCR processing" active={step >= 4} done={step >= 5} />
-            <PipelineItem label="Metadata extraction" active={step >= 5} done={step >= 6} />
+            <PipelineItem label="File received" active={uiStep >= 0} done={uiStep >= 1} />
+            <PipelineItem label="SHA-256 calculated" active={uiStep >= 1} done={uiStep >= 2} />
+            <PipelineItem label="Evidence encrypted" active={uiStep >= 2} done={uiStep >= 3} />
+            <PipelineItem label="Integrity proof recorded" active={uiStep >= 3} done={uiStep >= 4} />
+            <PipelineItem label="OCR processing" active={uiStep >= 4} done={uiStep >= 5} />
+            <PipelineItem label="Metadata extraction" active={uiStep >= 5} done={uiStep >= 6} />
             <div className="flex items-center gap-3 text-slate-500 font-medium">
               <Circle className="h-5 w-5" />
               <span>Human review (Pending)</span>

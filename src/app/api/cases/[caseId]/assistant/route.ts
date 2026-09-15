@@ -44,10 +44,12 @@ export async function POST(
     if (response.answer.includes("error occurred while communicating with the AI service")) {
       throw new Error("LLM provider unreachable");
     }
+    response.mode = "FULL";
   } catch (e) {
     console.warn("LLM provider failed, falling back to mock inference...");
     const { docs } = await generateContextAwarePrompt(query, caseId);
     response = await mockLlmInference(query, docs);
+    response.mode = "DEGRADED";
   }
 
   // 3. Log the AI Query to Audit Log

@@ -1,19 +1,5 @@
 import Tesseract, { createWorker, Worker } from "tesseract.js";
 
-// Keep a global worker instance alive to drastically reduce OCR latency on subsequent uploads
-let tesseractWorkerPromise: Promise<Worker> | null = null;
-
-async function getTesseractWorker(): Promise<Worker> {
-  if (!tesseractWorkerPromise) {
-    tesseractWorkerPromise = (async () => {
-      console.log("Initializing persistent Tesseract worker...");
-      const worker = await createWorker("eng");
-      return worker;
-    })();
-  }
-  return tesseractWorkerPromise;
-}
-
 type ExtractedFields = {
   caseNumber?: string;
   date?: string;
@@ -51,14 +37,14 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
   const dateMatch = text.match(/Date\s*[:\-]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
   if (dateMatch) data.date = dateMatch[1].trim();
 
-  const psMatch = text.match(/Police Station\s*[:\-]\s*([A-Za-z\s]+)/i);
+  const psMatch = text.match(/Police Station\s*[:\-]\s*([^\n\r]+)/i);
   if (psMatch) data.policeStation = psMatch[1].trim();
 
-  const secMatch = text.match(/Section[s]?\s*[:\-]\s*([0-9A-Za-z,\s]+)/i);
+  const secMatch = text.match(/Section[s]?\s*[:\-]\s*([^\n\r]+)/i);
   if (secMatch) data.sections = secMatch[1].split(",").map((s) => s.trim());
 
   // Simulate low confidence on handwritten/tricky names
-  const nameMatch = text.match(/Accused\s*[:\-]\s*([A-Za-z\s,]+)/i);
+  const nameMatch = text.match(/Accused\s*[:\-]\s*([^\n\r]+)/i);
   if (nameMatch) {
     data.accusedNames = nameMatch[1].split(",").map((n) => n.trim());
     conf.accusedNames = 0.55; 
@@ -66,7 +52,7 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
 
   if (docType === "WITNESS_STATEMENT") {
     // Try to find "My name is [Name]" or "Statement of [Name]" or "Signed, [Name]"
-    const witnessMatch = text.match(/(?:My name i[cs]|Statement of)\s+([A-Z][A-Za-z\s]+)(?:,|\.)/i) || text.match(/Signed,?\s*([A-Z][A-Za-z\s]+)/i) || text.match(/Cianed,?\s*([A-Z][A-Za-z\s]+)/i);
+    const witnessMatch = text.match(/(?:My name i[cs]|Statement of)\s+([A-Z][A-Za-z\s]+)(?:,|\.)/i) || text.match(/Signed,?\s*([^\n\r]+)/i) || text.match(/Cianed,?\s*([^\n\r]+)/i);
     if (witnessMatch) {
       data.accusedNames = [witnessMatch[1].trim()]; // reusing field for witness name
       conf.accusedNames = 0.75;
@@ -119,14 +105,19 @@ export async function processDocument(
   let overallConfidence = 0.8;
 
   if (mimeType.startsWith("image/")) {
+    let worker: Worker | null = null;
     try {
-      const worker = await getTesseractWorker();
+      worker = await createWorker("eng");
       const { data } = await worker.recognize(buffer);
       rawText = data.text;
       overallConfidence = data.confidence / 100;
     } catch (error) {
       console.error("Tesseract error:", error);
       rawText = "[OCR Engine Error - Falling back to mock extraction]";
+    } finally {
+      if (worker) {
+        await worker.terminate().catch(console.error);
+      }
     }
   } else if (mimeType === "application/pdf") {
     // PDF files: extract embedded text directly (no OCR needed for typed/digital PDFs)

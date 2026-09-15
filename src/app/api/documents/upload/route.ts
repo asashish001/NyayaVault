@@ -131,10 +131,7 @@ export async function POST(request: NextRequest) {
   const storage = getStorage();
   await storage.put(storageKey, buffer, file.type);
 
-  // Trigger OCR processing completely asynchronously so we return immediately
-  setTimeout(() => {
-    processDocumentOcr(documentRecord.id, versionNumber, buffer, file.type).catch(console.error);
-  }, 100);
+  // OCR is now triggered explicitly by the client via POST /api/documents/[id]/process-ocr
 
   return NextResponse.json({ 
     success: true, 

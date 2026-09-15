@@ -10,8 +10,9 @@ import type { Role } from "@prisma/client";
 import {
   Home, Folder, Upload, Search, FileText, Shield,
   Fingerprint, Scale, BarChart, Bot, Settings, Share2,
-  Bell, ChevronDown, AlertCircle, ShieldAlert, ArrowRightLeft, FileWarning
+  Bell, ChevronDown, AlertCircle, ShieldAlert, ArrowRightLeft, FileWarning, Menu, X
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import logoImage from "../../public/logo.png";
 
 const ALL_NAV = [
@@ -62,6 +63,8 @@ export function AppShell({
 
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,7 +83,17 @@ export function AppShell({
         const res = await fetch("/api/notifications");
         if (res.ok) {
           const data = await res.json();
-          setNotifications(data.notifications || []);
+          const newNotifs = data.notifications || [];
+          
+          setNotifications(prev => {
+            if (prev.length > 0 && newNotifs.length > 0) {
+              const newItems = newNotifs.filter((n: any) => !prev.some(p => p.id === n.id));
+              if (newItems.length > 0 && !showNotifs) {
+                setUnreadCount(count => count + newItems.length);
+              }
+            }
+            return newNotifs;
+          });
         }
       } catch (err) {
         console.error("Failed to fetch notifications", err);
@@ -90,7 +103,7 @@ export function AppShell({
     fetchNotifs();
     const interval = setInterval(fetchNotifs, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [showNotifs]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -129,12 +142,20 @@ export function AppShell({
       {/* Top App Bar (Full Width) */}
       <header className="fixed top-0 inset-x-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md">
 
-        <div className="flex w-64 flex-col justify-center pl-6 gap-0.5 mt-1">
-          <Image src={logoImage} alt="NyayaVault" width={240} height={80} className="w-[190px] h-auto drop-shadow-sm" unoptimized />
+        <div className="flex lg:w-64 items-center pl-4 lg:pl-6 gap-2 mt-1">
+          <button 
+            className="lg:hidden p-1 mr-1 text-slate-600 hover:text-navy transition-colors"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="flex flex-col justify-center gap-0.5">
+            <Image src={logoImage} alt="NyayaVault" width={240} height={80} className="w-[140px] lg:w-[190px] h-auto drop-shadow-sm" unoptimized />
+          </div>
         </div>
 
         {/* Middle: Search */}
-        <div className="flex-1 px-8">
+        <div className="flex-1 px-2 lg:px-8 hidden md:block">
           <form 
             className="relative w-full max-w-2xl"
             onSubmit={(e) => {
@@ -157,22 +178,31 @@ export function AppShell({
 
         {/* Right: Profile Actions */}
         <div className="flex items-center gap-6 pr-6">
-          {/* Active Case Badge */}
+          {/* Active Case / Workspace Badge */}
           {user.role !== "ADMIN" && (
             <div className="hidden lg:flex items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-1.5 rounded-full shadow-sm">
               <Folder className="h-4 w-4 text-slate-500" />
-              <span className="text-xs font-bold text-slate-700">WS-2026-0001</span>
+              <span className="text-xs font-bold text-slate-700">
+                {pathname === "/cases" ? "All assigned cases" 
+                 : (pathname.startsWith("/review/") || pathname.startsWith("/cases/")) ? "Case: WS-2026-0001" 
+                 : "Current workspace"}
+              </span>
             </div>
           )}
 
           <div className="relative" ref={notifRef}>
             <button 
-              onClick={() => setShowNotifs(!showNotifs)}
+              onClick={() => {
+                setShowNotifs(!showNotifs);
+                if (!showNotifs) setUnreadCount(0);
+              }}
               className="relative text-black hover:text-slate-700 transition-colors"
             >
               <Bell className="h-5 w-5" />
-              {notifications.length > 0 && (
-                <span className="absolute right-0 top-0 block h-2 w-2 rounded-full border-2 border-[#0F294D] bg-red-500"></span>
+              {unreadCount > 0 && (
+                <span className="absolute right-0 top-0 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-red-500 text-[8px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
             </button>
 
@@ -180,11 +210,6 @@ export function AppShell({
               <div className="absolute right-0 mt-4 w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="bg-slate-50 border-b border-slate-100 px-4 py-3 flex justify-between items-center">
                   <h4 className="font-bold text-sm text-[#0F294D]">Notifications</h4>
-                  {notifications.length > 0 && (
-                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                      {notifications.length} New
-                    </span>
-                  )}
                 </div>
                 <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
@@ -202,7 +227,7 @@ export function AppShell({
                             <p className="text-xs font-bold text-[#0F294D] mb-1">{notif.title}</p>
                             <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{notif.message}</p>
                             <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                              {new Date(notif.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formatDistanceToNow(new Date(notif.time), { addSuffix: true })}
                             </p>
                           </div>
                         </div>
@@ -210,8 +235,8 @@ export function AppShell({
                     ))
                   )}
                 </div>
-                <div className="bg-slate-50 border-t border-slate-100 p-2 text-center">
-                  <button className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors w-full py-1">View all notifications</button>
+                <div className="p-2 text-center border-t border-slate-100 bg-slate-50 rounded-b-xl">
+                  <Link href="/notifications" className="block text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors w-full py-1">View all notifications</Link>
                 </div>
               </div>
             )}
@@ -238,8 +263,22 @@ export function AppShell({
         </div>
       </header>
 
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="fixed bottom-0 left-0 top-16 z-20 flex w-64 flex-col bg-white/80 backdrop-blur-md border-r border-slate-200">
+      <aside className={`fixed bottom-0 left-0 top-16 z-50 flex w-64 flex-col bg-white/95 lg:bg-white/80 backdrop-blur-md border-r border-slate-200 transition-transform duration-300 lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="flex justify-between items-center lg:hidden px-6 py-4 border-b border-slate-100">
+          <span className="font-bold text-[#0F294D]">Menu</span>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#0F294D]">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
         <nav className="flex-1 flex flex-col gap-2 overflow-y-auto py-6">
           {getNavForRole(user.role).map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -248,6 +287,7 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`mx-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-semibold transition-colors ${active
                   ? "bg-[#0F294D] text-white"
                   : "text-slate-700 hover:bg-slate-200/50 hover:text-[#0F294D]"
@@ -276,7 +316,7 @@ export function AppShell({
       </aside>
 
       {/* Main Content Area */}
-      <main className="ml-64 pt-16 min-h-screen relative overflow-hidden">
+      <main className="ml-0 lg:ml-64 pt-16 min-h-screen relative overflow-hidden transition-all duration-300">
         {/* We move the fading building illustration to the PageHeader or wrap it here if it's on every page. 
             Since it appears on the dashboard and other pages, we will implement it in PageHeader for cleaner scoping. */}
         <div className="relative z-10 p-8 max-w-[1600px] mx-auto">

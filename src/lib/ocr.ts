@@ -9,13 +9,19 @@ const openai = createOpenAI({
 });
 
 export async function processDocumentOcr(documentId: string, version: number, buffer: Buffer, mimeType: string) {
+  console.log(`[OCR] Starting processDocumentOcr for docId: ${documentId}, mimeType: ${mimeType}`);
   const doc = await prisma.document.findUnique({ where: { id: documentId } });
-  if (!doc) return;
+  if (!doc) {
+    console.log(`[OCR] Error: Document ${documentId} not found in DB!`);
+    return;
+  }
+  console.log(`[OCR] Document found. Type: ${doc.type}. Initiating processDocument...`);
 
   // Run the new IDP pipeline (Tesseract for images, pdf-parse for PDFs)
-  const ocrResult = await processDocument(buffer, mimeType, doc.type);
-
-  const extractionJson = JSON.stringify({
+  try {
+    const ocrResult = await processDocument(buffer, mimeType, doc.type);
+    console.log(`[OCR] processDocument finished successfully.`);
+    const extractionJson = JSON.stringify({
     fields: ocrResult.extractedData,
     confidences: ocrResult.fieldConfidence
   });
@@ -72,4 +78,8 @@ export async function processDocumentOcr(documentId: string, version: number, bu
       })
     ] : [])
   ]);
+  console.log(`[OCR] Database transaction complete. Status updated to ${nextStatus}.`);
+  } catch (err) {
+    console.error(`[OCR] Fatal error during processDocumentOcr:`, err);
+  }
 }

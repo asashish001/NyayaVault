@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Bot, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Citation, AiResponse } from "@/lib/ai/assistant";
 
 type Message = {
@@ -18,6 +19,7 @@ export function AiAssistant({ caseId }: { caseId: string }) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [systemMode, setSystemMode] = useState<"FULL" | "DEGRADED" | null>(null);
 
   async function sendMessage(text: string) {
     if (!text.trim() || !caseId) return;
@@ -38,6 +40,7 @@ export function AiAssistant({ caseId }: { caseId: string }) {
       
       if (res.ok) {
         setMessages(prev => [...prev, { role: "assistant", content: data.answer, citations: data.citations }]);
+        if (data.mode) setSystemMode(data.mode);
       } else {
         setMessages(prev => [...prev, { role: "assistant", content: `Error: ${(data as any).error}` }]);
       }
@@ -61,7 +64,28 @@ export function AiAssistant({ caseId }: { caseId: string }) {
   ];
 
   return (
-    <div className="flex flex-col h-full w-full bg-white">
+    <div className="flex flex-col h-full w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50/80">
+        <div className="flex items-center gap-2">
+          <Bot className="h-4 w-4 text-slate-600" />
+          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Case Assistant</span>
+        </div>
+        {systemMode === "DEGRADED" ? (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 border border-amber-200" title="The AI provider is unavailable. Using basic keyword fallback.">
+            <ShieldAlert className="h-3 w-3 text-amber-600" />
+            <span className="text-[9px] uppercase font-bold tracking-widest text-amber-700">
+              Limited AI mode — semantic reasoning unavailable
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 border border-emerald-200">
+            <ShieldCheck className="h-3 w-3 text-emerald-600" />
+            <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-700">
+              AI mode: Evidence Retrieval
+            </span>
+          </div>
+        )}
+      </div>
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -70,7 +94,7 @@ export function AiAssistant({ caseId }: { caseId: string }) {
               
               {m.citations && m.citations.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-slate-200/20">
-                  <span className="text-xs font-semibold uppercase opacity-70">Sources Cited:</span>
+                  <span className="text-xs font-semibold uppercase opacity-70 mb-1 block">Sources</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {m.citations.map((c, i) => (
                       <span key={i} className="text-xs px-2 py-1 bg-white/20 rounded border border-slate-300/30">

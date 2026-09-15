@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Check, Copy, ExternalLink } from "lucide-react";
 
 type DocInfo = {
   id: string;
@@ -176,30 +177,61 @@ export default function ShareDashboard() {
         </Card>
 
         {shareUrl && (
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800">Link Generated</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-green-700 mb-4">
-                This link will automatically expire in {expiryHours} hours. It is dynamically watermarked and logged upon access.
-              </p>
-              <textarea
-                readOnly
-                value={shareUrl}
-                className="w-full p-2 border border-green-300 rounded text-sm font-mono bg-white"
-                rows={3}
-              />
-              <Button 
-                variant="outline" 
-                className="mt-4 w-full"
-                onClick={() => {
-                  navigator.clipboard.writeText(shareUrl);
-                  alert("Copied to clipboard!");
-                }}
-              >
-                Copy Link
-              </Button>
+          <Card className="border-emerald-200 bg-white shadow-lg overflow-hidden h-fit">
+            <div className="bg-emerald-50 border-b border-emerald-100 p-6 flex flex-col items-center justify-center text-center">
+              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                <Check className="h-6 w-6 text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-bold text-emerald-800">Secure link generated</h3>
+              <p className="text-sm text-emerald-600 font-medium mt-1">Expires in {expiryHours} hours</p>
+            </div>
+            
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-slate-500 font-medium mb-1">Recipient</p>
+                  <p className="font-semibold text-slate-900">{recipient}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-medium mb-1">Purpose</p>
+                  <p className="font-semibold text-slate-900">{purpose}</p>
+                </div>
+              </div>
+
+              {redactedFields.length > 0 && (
+                <div>
+                  <p className="text-slate-500 font-medium text-sm mb-2">Redactions applied</p>
+                  <div className="flex flex-wrap gap-2">
+                    {redactedFields.map(field => (
+                      <span key={field} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+                        <Check className="h-3 w-3 text-emerald-500" />
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareUrl);
+                    alert("Copied to clipboard!");
+                  }}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy secure link
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.open(shareUrl, '_blank')}
+                  className="flex-1"
+                >
+                  Open preview
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -9,13 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, ShieldCheck, Link2, Bot, Info, ArrowRight, User, Landmark } from "lucide-react";
 
 const ACCOUNTS = [
-  { initials: "IM", bg: "bg-blue-300", text: "text-blue-900", email: "io.mehra@nyayavault.demo", role: "IO (assigned WS-2026-0001)" },
-  { initials: "SK", bg: "bg-green-300", text: "text-green-900", email: "sho.kapoor@nyayavault.demo", role: "SHO" },
-  { initials: "FN", bg: "bg-purple-300", text: "text-purple-900", email: "forensic.nair@nyayavault.demo", role: "Forensic Expert" },
-  { initials: "PP", bg: "bg-amber-300", text: "text-amber-900", email: "pp.sharma@nyayavault.demo", role: "Prosecutor" },
-  { initials: "AJ", bg: "bg-rose-300", text: "text-rose-900", email: "auditor.iyer@nyayavault.demo", role: "Judge / Auditor" },
-  { initials: "AD", bg: "bg-slate-300", text: "text-slate-900", email: "admin@nyayavault.demo", role: "Admin (no case bypass)" },
-  { initials: "IO", bg: "bg-teal-300", text: "text-teal-900", email: "io.unassigned@nyayavault.demo", role: "IO other case (deny demo)" },
+  { name: "Mehra", email: "io.mehra@nyayavault.demo", role: "Investigating Officer" },
+  { name: "Kapoor", email: "sho.kapoor@nyayavault.demo", role: "Station House Officer" },
+  { name: "Nair", email: "forensic.nair@nyayavault.demo", role: "Forensic Expert" },
+  { name: "Sharma", email: "pp.sharma@nyayavault.demo", role: "Prosecutor" },
+  { name: "Iyer", email: "auditor.iyer@nyayavault.demo", role: "Judge / Auditor" },
+  { name: "System", email: "admin@nyayavault.demo", role: "Admin" },
+  { name: "Unassigned", email: "io.unassigned@nyayavault.demo", role: "IO (Other Case)" },
 ];
 
 import logoImage from "../../public/logo.png";
@@ -204,7 +204,7 @@ export function LoginForm() {
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px bg-slate-200 flex-1"></div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1 whitespace-nowrap">
-                <User className="h-3 w-3" /> DEMO MODE — SELECT ROLE
+                <User className="h-3 w-3" /> DEMO IDENTITY
               </p>
               <div className="h-px bg-slate-200 flex-1"></div>
             </div>
@@ -220,10 +220,13 @@ export function LoginForm() {
             >
               {ACCOUNTS.map((item) => (
                 <option key={item.email} value={item.email}>
-                  {item.role} — {item.email}
+                  {item.role} — {item.name}
                 </option>
               ))}
             </select>
+            <div className="mt-3 text-center">
+              <p className="text-xs text-slate-500 font-mono">{email}</p>
+            </div>
           </div>
         </div>
       </div>

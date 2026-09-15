@@ -16,6 +16,7 @@ export type Citation = {
 export type AiResponse = {
   answer: string;
   citations: Citation[];
+  mode?: "FULL" | "DEGRADED";
 };
 
 export async function generateContextAwarePrompt(query: string, caseId: string) {
