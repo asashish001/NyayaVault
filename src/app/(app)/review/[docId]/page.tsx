@@ -2,6 +2,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { ReviewForm } from "./ReviewForm";
+import { authorizeCase } from "@/lib/audit";
 
 export default async function DocumentReviewPage({ params }: { params: Promise<{ docId: string }> }) {
   const user = await getSessionUser();
@@ -14,7 +15,31 @@ export default async function DocumentReviewPage({ params }: { params: Promise<{
     include: { ocrData: true, case: true }
   });
 
-  if (!doc || !doc.ocrData) {
+  if (!doc) {
+    redirect("/dashboard");
+  }
+
+  const authResult = await authorizeCase({
+    user,
+    caseId: doc.caseId,
+    action: "view_document",
+    userAgent: "IDPReviewUI",
+  });
+
+  if (!authResult.ok) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-serif text-3xl text-navy">Access Denied</h1>
+        </div>
+        <div className="rounded border border-red-200 bg-red-50 p-8 text-center text-red-800">
+          You do not have clearance or assignment to view documents for this case. This attempt has been audited.
+        </div>
+      </div>
+    );
+  }
+
+  if (!doc.ocrData) {
     return (
       <div className="space-y-6">
         <div>

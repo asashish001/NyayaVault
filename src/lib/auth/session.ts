@@ -56,10 +56,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!decoded) return null;
   
   // Verify user still exists in the DB (prevents crashes after db:seed)
+  // SECURITY FIX: Overwrite the JWT's baked role with the fresh role from the database 
+  // to ensure instant revocation if a user is demoted in production.
   const exists = await prisma.user.findUnique({ where: { id: decoded.id } });
   if (!exists) return null;
   
-  return decoded;
+  return { ...decoded, role: exists.role };
 }
 
 export async function setSessionCookie(token: string) {

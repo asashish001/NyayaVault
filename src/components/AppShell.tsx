@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { CaseSwitcher } from "@/components/CaseSwitcher";
 import { DemoBanner } from "@/components/DemoBanner";
 import type { Role } from "@prisma/client";
 import {
@@ -179,16 +180,7 @@ export function AppShell({
         {/* Right: Profile Actions */}
         <div className="flex items-center gap-6 pr-6">
           {/* Active Case / Workspace Badge */}
-          {user.role !== "ADMIN" && (
-            <div className="hidden lg:flex items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-1.5 rounded-full shadow-sm">
-              <Folder className="h-4 w-4 text-slate-500" />
-              <span className="text-xs font-bold text-slate-700">
-                {pathname === "/cases" ? "All assigned cases" 
-                 : (pathname.startsWith("/review/") || pathname.startsWith("/cases/")) ? "Case: WS-2026-0001" 
-                 : "Current workspace"}
-              </span>
-            </div>
-          )}
+          {user.role !== "ADMIN" && <CaseSwitcher />}
 
           <div className="relative" ref={notifRef}>
             <button 

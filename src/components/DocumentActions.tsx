@@ -45,13 +45,6 @@ export function DocumentActions({ docId }: { docId: string }) {
       >
         Download
       </a>
-      <a 
-        href={`/court-bundle/${docId}`} 
-        target="_blank"
-        className="rounded bg-navy text-white px-2 py-1 text-xs font-medium hover:bg-navy/90"
-      >
-        Court Export
-      </a>
       <button 
         onClick={handleDelete}
         disabled={loading}
