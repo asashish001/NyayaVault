@@ -88,7 +88,7 @@ export default async function CaseCourtBundlePage({
         {/* Certificate Header */}
         <div className="text-center border-b-4 border-slate-900 pb-6 mb-12">
           <h1 className="text-4xl font-serif font-bold uppercase tracking-widest">Master Court Bundle</h1>
-          <p className="text-sm mt-2 uppercase font-semibold text-slate-600">Digital Evidence Compilation & Section 65B Certificate</p>
+          <p className="text-sm mt-2 uppercase font-semibold text-slate-600">Digital Evidence Compilation & Section 63 (BSA) Certificate</p>
           <p className="text-xs mt-1 text-slate-500">NyayaVault Cryptographic Integrity Framework</p>
         </div>
 
@@ -196,14 +196,14 @@ export default async function CaseCourtBundlePage({
 
         <div className="page-break-before print:break-before-page"></div>
 
-        {/* Master Section 65B Certificate & Cryptographic Proof */}
+        {/* Master Section 63 (BSA) Certificate & Cryptographic Proof */}
         <div className="border-4 border-slate-900 p-8 rounded-sm mt-8 break-inside-avoid relative">
           <div className="absolute top-4 right-4 border-2 border-red-800 text-red-800 font-bold uppercase p-2 text-xs opacity-50 transform rotate-12">
             Electronically Certified
           </div>
-          <h2 className="font-bold text-2xl uppercase mb-6 text-center border-b border-slate-300 pb-4">Master Section 65B Certificate</h2>
+          <h2 className="font-bold text-2xl uppercase mb-6 text-center border-b border-slate-300 pb-4">Master Section 63 (BSA) Certificate</h2>
           <p className="text-sm mb-6 leading-relaxed">
-            This is to certify under Section 65B of the Indian Evidence Act that the electronic records listed in this compilation 
+            This is to certify under Section 63 (read with Section 61 for legal validity of electronic records) of the Bharatiya Sakshya Adhiniyam, 2023 that the electronic records listed in this compilation 
             were produced by a computer system operating properly at the time of creation. The cryptographic hashes and ledger proofs 
             below guarantee that no tampering or alteration has occurred since the records were anchored to the NyayaVault ledger.
           </p>
@@ -228,7 +228,13 @@ export default async function CaseCourtBundlePage({
           <div className="flex justify-between mt-12 pt-8 border-t border-slate-300">
             <div className="text-center">
               <div className="w-48 border-b border-slate-800 mb-2"></div>
-              <p className="text-xs uppercase font-bold">Authorized Signatory</p>
+              <p className="text-xs uppercase font-bold">Person in Charge</p>
+              <p className="text-[10px] text-slate-500">(of computer system)</p>
+            </div>
+            <div className="text-center">
+              <div className="w-48 border-b border-slate-800 mb-2"></div>
+              <p className="text-xs uppercase font-bold">Expert Signatory</p>
+              <p className="text-[10px] text-slate-500">(As per BSA 2023 Schedule)</p>
             </div>
             <div className="text-center">
               <div className="w-48 border-b border-slate-800 mb-2"></div>

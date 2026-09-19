@@ -101,6 +101,7 @@ See `.env.example`. Copy it to `.env` before first run. You must add your own Hu
 - TLS 1.3 applies in deployment; local demo is HTTP.
 - Ledger in the database is a **tamper-evident hash chain**. It is not Hyperledger Fabric.
 - Mock adapters must not be described as live government integrations.
+- **CERT-In Compliance (NTP Sync):** To comply with CERT-In directions for accurate audit logging and incident reporting, the host OS running this application must be configured to synchronize its clock with the Network Time Protocol (NTP) servers of the National Informatics Centre (NIC) or National Physical Laboratory (NPL). Ensure your deployment environments are configured to sync with `samay1.nic.in`, `samay2.nic.in`, or NPL's `time.nplindia.in`.
 
 ## Limitations
 
