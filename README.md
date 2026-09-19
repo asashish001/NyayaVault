@@ -13,6 +13,15 @@ Most core features (identity, RBAC/ABAC, audit, upload, ledger UI, sharing, OCR,
 
 See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living engineering record.
 
+## 🛑 Important Notes Before Cloning
+
+Before you clone and run this repository, please note the following to ensure a smooth setup:
+
+1. **HuggingFace Token is Mandatory:** The AI Legal Assistant (Summarization and Semantic Search) uses the HuggingFace Inference API. You **must** create a free HuggingFace account and put your Access Token in the `.env` file before running the application, otherwise the AI features will fail. 
+2. **Corporate VPNs & Firewalls:** During the `npm install` and `prisma migrate dev` steps, Prisma ORM downloads its database engine binaries. If you are on a strict corporate network or VPN, this will likely fail with a 403 Forbidden error and break the app. Please disconnect from your VPN during the initial setup.
+3. **Standalone Architecture:** To make setup as frictionless as possible, we avoided complex Docker orchestration. The entire stack (Backend API, Frontend UI, SQLite Database, Local File Storage, and Local OCR) runs inside a **single Next.js process**.
+4. **Pre-Seeded Data:** Running `npm run db:seed` will automatically populate the database with a fictional women-safety case, dummy documents, and the required role-based user accounts so you don't have to register from scratch.
+
 ## Quick start
 
 Prerequisites: Node.js 20+ and npm.
@@ -95,6 +104,7 @@ See `.env.example`. Copy it to `.env` before first run. You must add your own Hu
 
 ## Security notes
 
+- **Dynamic UI Navigation:** The application strictly enforces Role-Based Access Control (RBAC). Users will only see navigation tabs and features in the UI that they have explicitly been granted privileges for.
 - Authorization is enforced in server code, not only the UI.
 - Admin cannot silently skip case ABAC or the audit trail.
 - Rate limiting is an in-memory placeholder.

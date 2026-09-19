@@ -1,15 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastProvider";
 
-export function ReviewForm({ docId, initialData }: { docId: string, initialData: string }) {
+export function ReviewForm({ 
+  docId, 
+  initialData,
+  rawText,
+  onSuccess,
+  onCancel
+}: { 
+  docId: string;
+  initialData: string;
+  rawText?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}) {
   const toast = useToast();
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   
   // Parse initial data
@@ -54,9 +64,7 @@ export function ReviewForm({ docId, initialData }: { docId: string, initialData:
       body: JSON.stringify({ correctedFields: fields })
     });
     if (res.ok) {
-      toast.success("Document approved successfully!");
-      router.push("/review");
-      router.refresh();
+      if (onSuccess) onSuccess();
     } else {
       toast.error("Failed to approve document");
       setBusy(false);
@@ -74,7 +82,19 @@ export function ReviewForm({ docId, initialData }: { docId: string, initialData:
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+          <div className="bg-slate-50 px-5 py-4 border-b border-slate-200">
+            <h2 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Raw Extracted Text</h2>
+          </div>
+          <div className="p-4 flex-1">
+            <pre className="h-96 overflow-auto rounded bg-slate-50 p-4 text-xs text-slate-600 whitespace-pre-wrap font-mono border border-slate-200">
+              {rawText || "No raw text available."}
+            </pre>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm flex-1">
         <table className="w-full text-left text-sm text-slate-700">
           <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
             <tr>
@@ -145,9 +165,12 @@ export function ReviewForm({ docId, initialData }: { docId: string, initialData:
           </tbody>
         </table>
       </div>
+    </div>
 
-      <div className="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-6">
-        <Button variant="outline" onClick={() => router.push("/review")} disabled={busy} className="h-11 px-8 font-bold shadow-sm">Cancel</Button>
+    <div className="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-6">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel} disabled={busy} className="h-11 px-8 font-bold shadow-sm">Cancel</Button>
+        )}
         <Button onClick={handleApprove} disabled={busy} className="h-11 px-8 font-bold bg-[#0F294D] hover:bg-[#0F294D]/90 text-white shadow-md transition-all">
           {busy ? "Approving..." : "Approve & Index Data"}
         </Button>

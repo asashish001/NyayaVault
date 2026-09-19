@@ -33,9 +33,6 @@ export function CaseSwitcher() {
   let currentCaseId = "";
   if (pathname.startsWith("/cases/") && pathname.split("/").length > 2) {
     currentCaseId = pathname.split("/")[2];
-  } else if (pathname.startsWith("/review/") && pathname.split("/").length > 2) {
-    // If we're inside a document review, we don't have the caseId in the URL easily,
-    // so we can just leave it as "default" or try to map it. For simplicity, we just leave it blank.
   }
 
   return (

@@ -21,7 +21,6 @@ const ALL_NAV = [
   { href: "/cases", label: "Cases", icon: Folder },
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/search", label: "Search", icon: Search },
-  { href: "/review", label: "IDP Review", icon: FileText },
   { href: "/custody", label: "Custody", icon: Shield },
   { href: "/integrity", label: "Integrity", icon: Fingerprint },
   { href: "/court-bundle", label: "Court bundle", icon: Scale },
@@ -32,11 +31,11 @@ const ALL_NAV = [
 function getNavForRole(role: Role) {
   switch (role) {
     case "IO":
-      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/search", "/review", "/custody", "/integrity", "/share"].includes(n.href));
+      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/search", "/custody", "/integrity", "/share"].includes(n.href));
     case "SHO":
-      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/search", "/review", "/custody", "/integrity", "/audit", "/share"].includes(n.href));
+      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/search", "/custody", "/integrity", "/audit", "/share"].includes(n.href));
     case "FORENSIC_EXPERT":
-      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/review", "/custody", "/integrity"].includes(n.href));
+      return ALL_NAV.filter(n => ["/dashboard", "/cases", "/upload", "/custody", "/integrity"].includes(n.href));
     case "PROSECUTOR":
       return ALL_NAV.filter(n => ["/dashboard", "/cases", "/search", "/custody", "/integrity", "/court-bundle"].includes(n.href));
     case "JUDGE_AUDITOR":
