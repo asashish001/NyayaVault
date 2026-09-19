@@ -39,6 +39,13 @@ export function DocumentActions({ docId }: { docId: string }) {
   return (
     <div className="flex items-center gap-2">
       <a 
+        href={`/api/documents/${docId}/certificate`} 
+        target="_blank"
+        className="rounded bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+      >
+        Section 63 Cert
+      </a>
+      <a 
         href={`/api/documents/${docId}/download`} 
         target="_blank"
         className="rounded bg-slate-100 px-2 py-1 text-xs font-medium hover:bg-slate-200"

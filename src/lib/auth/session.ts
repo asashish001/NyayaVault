@@ -25,7 +25,8 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
     .setIssuedAt()
-    .setExpirationTime("8h")
+    // CJIS Compliance: Strict 30-minute inactivity timeout.
+    .setExpirationTime("30m")
     .sign(secretKey());
 }
 
@@ -71,6 +72,7 @@ export async function setSessionCookie(token: string) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
+    maxAge: 30 * 60, // 30 minutes in seconds
   });
 }
 

@@ -160,8 +160,8 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
                 {drafts.map((draft) => (
                   <div key={draft.id} className="flex flex-col sm:flex-row gap-3 p-4 border border-slate-200 rounded-lg bg-slate-50/50 items-start sm:items-center relative group">
                     <Button 
-                      variant="ghost" 
-                      size="icon" 
+                      variant="outline" 
+                      size="sm" 
                       onClick={() => removeDraft(draft.id)}
                       className="absolute top-2 right-2 h-6 w-6 text-slate-400 hover:text-red-600 hover:bg-red-50"
                     >

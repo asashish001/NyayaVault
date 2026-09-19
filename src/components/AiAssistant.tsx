@@ -1,25 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, ShieldCheck, ShieldAlert } from "lucide-react";
-import { Citation, AiResponse } from "@/lib/ai/assistant";
+import { Bot, ShieldCheck, ShieldAlert, Cpu } from "lucide-react";
+import { useTransformersWorker } from "@/lib/ai/client";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
-  citations?: Citation[];
 };
 
 export function AiAssistant({ caseId }: { caseId: string }) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hello! I am your AI Case Assistant. You can ask me questions about the documents uploaded and processed in this case. What would you like to know?" }
+    { role: "assistant", content: "Hello! I am your completely offline AI Case Assistant. What would you like to know about this case?" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [systemMode, setSystemMode] = useState<"FULL" | "DEGRADED" | null>(null);
+  const [context, setContext] = useState<string>("");
+  const { generate } = useTransformersWorker();
+
+  // Fetch context once when the component mounts
+  useEffect(() => {
+    async function fetchContext() {
+      try {
+        const res = await fetch(`/api/cases/${caseId}/context`);
+        const data = await res.json();
+        if (data.context) {
+          setContext(data.context);
+        }
+      } catch (err) {
+        console.error("Failed to fetch case context", err);
+      }
+    }
+    if (caseId) {
+      fetchContext();
+    }
+  }, [caseId]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || !caseId) return;
@@ -29,26 +47,18 @@ export function AiAssistant({ caseId }: { caseId: string }) {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
 
-    try {
-      const res = await fetch(`/api/cases/${caseId}/assistant`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userMsg })
-      });
-      
-      const data: AiResponse = await res.json();
-      
-      if (res.ok) {
-        setMessages(prev => [...prev, { role: "assistant", content: data.answer, citations: data.citations }]);
-        if (data.mode) setSystemMode(data.mode);
-      } else {
-        setMessages(prev => [...prev, { role: "assistant", content: `Error: ${(data as any).error}` }]);
+    const prompt = `System Context: You are a secure AI Case Assistant. Rely ONLY on the provided documents.\nUser Query: ${userMsg}\nContext Documents:\n${context}`;
+
+    generate(prompt, (response) => {
+      if (response.type === 'COMPLETE') {
+        setMessages(prev => [...prev, { role: "assistant", content: response.payload.result }]);
+        setLoading(false);
+      } else if (response.type === 'ERROR') {
+        setMessages(prev => [...prev, { role: "assistant", content: `Error: ${response.payload.error}` }]);
+        setLoading(false);
       }
-    } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", content: "A network error occurred." }]);
-    } finally {
-      setLoading(false);
-    }
+      // Note: you could handle 'PROGRESS' here to show a streaming effect or download progress
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,40 +80,18 @@ export function AiAssistant({ caseId }: { caseId: string }) {
           <Bot className="h-4 w-4 text-slate-600" />
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Case Assistant</span>
         </div>
-        {systemMode === "DEGRADED" ? (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 border border-amber-200" title="The AI provider is unavailable. Using basic keyword fallback.">
-            <ShieldAlert className="h-3 w-3 text-amber-600" />
-            <span className="text-[9px] uppercase font-bold tracking-widest text-amber-700">
-              Limited AI mode — semantic reasoning unavailable
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 border border-emerald-200">
-            <ShieldCheck className="h-3 w-3 text-emerald-600" />
-            <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-700">
-              AI mode: Evidence Retrieval
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-50 border border-indigo-200" title="Running offline via WebAssembly">
+          <Cpu className="h-3 w-3 text-indigo-600" />
+          <span className="text-[9px] uppercase font-bold tracking-widest text-indigo-700">
+            Local AI Engine Active
+          </span>
+        </div>
       </div>
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] rounded-lg p-3 text-sm ${m.role === 'user' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'}`}>
               <div className="whitespace-pre-wrap">{m.content}</div>
-              
-              {m.citations && m.citations.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-200/20">
-                  <span className="text-xs font-semibold uppercase opacity-70 mb-1 block">Sources</span>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {m.citations.map((c, i) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-white/20 rounded border border-slate-300/30">
-                        📄 {c.title}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -124,8 +112,8 @@ export function AiAssistant({ caseId }: { caseId: string }) {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-lg p-3 text-sm bg-slate-100 text-slate-500 border border-slate-200">
-              <span className="animate-pulse">Analyzing case documents...</span>
+            <div className="max-w-[80%] rounded-lg p-3 text-sm bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-2">
+              <span className="animate-pulse">Generating offline response...</span>
             </div>
           </div>
         )}
@@ -149,3 +137,4 @@ export function AiAssistant({ caseId }: { caseId: string }) {
     </div>
   );
 }
+

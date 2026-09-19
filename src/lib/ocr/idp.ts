@@ -84,8 +84,9 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
  */
 async function extractPdfText(buffer: Buffer): Promise<string | null> {
   try {
-    const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(buffer);
+    const pdfParse: any = await import("pdf-parse");
+    const parser = pdfParse.default || pdfParse;
+    const result = await parser(buffer);
     if (result.text && result.text.trim().length > 0) {
       return result.text.trim();
     }
