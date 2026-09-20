@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { Search, Folder, Calendar, MapPin, ChevronRight, FileText, Filter, List, LayoutGrid } from "lucide-react";
+import { formatClassification } from "@/lib/utils/format";
 
 export default async function CasesPage() {
   const user = await getSessionUser();
@@ -111,7 +112,7 @@ export default async function CasesPage() {
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <span className="font-bold text-lg text-[#0F294D]">{row.case.caseNumber}</span>
                       <Badge className="bg-[#FFF8E6] text-[#B8860B] hover:bg-[#FFF8E6] border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-wider">{row.case.status}</Badge>
-                      <Badge className="bg-[#0F294D] text-white hover:bg-[#0F294D]/90 border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-wider">{row.case.classification}</Badge>
+                      <Badge className="bg-[#0F294D] text-white hover:bg-[#0F294D]/90 border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-wider">{formatClassification(row.case.classification)}</Badge>
                     </div>
                     
                     <p className="text-slate-700 font-medium mb-3 text-sm">{row.case.title}</p>

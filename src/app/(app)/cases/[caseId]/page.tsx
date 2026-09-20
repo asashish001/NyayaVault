@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GenerateSummaryButton } from "./GenerateSummaryButton";
 import { DocumentActions } from "@/components/DocumentActions";
+import { formatClassification } from "@/lib/utils/format";
 
 export default async function CaseDetailPage({
   params,
@@ -58,7 +59,7 @@ export default async function CaseDetailPage({
           <h1 className="font-serif text-3xl text-navy">{record.caseNumber}</h1>
           <p className="text-slate-600">{record.title}</p>
         </div>
-        <Badge>{record.classification}</Badge>
+        <Badge>{formatClassification(record.classification)}</Badge>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

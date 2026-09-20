@@ -3,18 +3,19 @@ import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { formatClassification } from "@/lib/utils/format";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: Promise<{ docId: string }> }
 ) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { documentId } = await params;
+  const { docId } = await params;
 
   const document = await prisma.document.findUnique({
-    where: { id: documentId },
+    where: { id: docId },
     include: {
       case: true,
       uploadedBy: true,
@@ -60,7 +61,7 @@ export async function GET(
   drawText(`Case Number: ${document.case.caseNumber}`, font, 11);
   drawText(`Document Title: ${document.title}`, font, 11);
   drawText(`Document ID: ${document.id}`, font, 11);
-  drawText(`Classification: ${document.classification}`, font, 11);
+  drawText(`Classification: ${formatClassification(document.classification)}`, font, 11);
   y -= 10;
 
   drawText("1. Description of Electronic Record:", boldFont, 11);

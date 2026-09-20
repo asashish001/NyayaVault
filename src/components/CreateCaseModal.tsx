@@ -51,9 +51,11 @@ export function CreateCaseModal() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Classification</label>
                 <select name="classification" className="w-full p-2 border border-slate-300 rounded focus:border-navy outline-none">
-                  <option value="GENERAL">General</option>
-                  <option value="SENSITIVE">Sensitive</option>
-                  <option value="RESTRICTED">Restricted</option>
+                  <option value="PROTECTED_VICTIM_WITNESS">Class 1 (Highly Confidential)</option>
+                  <option value="RESTRICTED">Class 2 (Restricted Access)</option>
+                  <option value="CONFIDENTIAL" selected>Class 3 (Confidential)</option>
+                  <option value="INTERNAL">Class 4 (Internal Police Use)</option>
+                  <option value="PUBLIC">Class 5 (Public Information)</option>
                 </select>
               </div>
               <div>

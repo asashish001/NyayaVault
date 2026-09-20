@@ -17,24 +17,21 @@ See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living en
 
 Before you clone and run this repository, please note the following to ensure a smooth setup:
 
-1. **HuggingFace Token is Mandatory:** The AI Legal Assistant (Summarization and Semantic Search) uses the HuggingFace Inference API. You **must** create a free HuggingFace account and put your Access Token in the `.env` file before running the application, otherwise the AI features will fail. 
-2. **Corporate VPNs & Firewalls:** During the `npm install` and `prisma migrate dev` steps, Prisma ORM downloads its database engine binaries. If you are on a strict corporate network or VPN, this will likely fail with a 403 Forbidden error and break the app. Please disconnect from your VPN during the initial setup.
-3. **Standalone Architecture:** To make setup as frictionless as possible, we avoided complex Docker orchestration. The entire stack (Backend API, Frontend UI, SQLite Database, Local File Storage, and Local OCR) runs inside a **single Next.js process**.
-4. **Pre-Seeded Data:** Running `npm run db:seed` will automatically populate the database with a fictional women-safety case, dummy documents, and the required role-based user accounts so you don't have to register from scratch.
+1. **100% Offline AI:** The AI Legal Assistant runs entirely locally in your browser using a quantized ONNX model and WebGPU. Zero data is sent to the cloud.
+2. **Standalone Architecture:** To make setup as frictionless as possible, we avoided complex Docker orchestration. The entire stack (Backend API, Frontend UI, SQLite Database, Local File Storage, and Local OCR) runs inside a **single Next.js process**.
+3. **Pre-Seeded Data:** Running `npm run db:seed` will automatically populate the database with a fictional women-safety case, dummy documents, and the required role-based user accounts so you don't have to register from scratch.
 
 ## Quick start
 
 Prerequisites: Node.js 20+ and npm.
 
-## AI engine
-The AI features use the **HuggingFace Inference API**. You must provide your own HuggingFace access token in the `.env` file for the LLM and embeddings to work.
+## AI engine (100% Offline & Air-Gapped)
+To comply with strict data privacy laws for sensitive legal documents, the AI Case Assistant has been completely isolated from the internet. 
 
-**How to get a free HuggingFace Token:**
-1. Create a free account at [HuggingFace](https://huggingface.co/join).
-2. Go to your [Access Tokens page](https://huggingface.co/settings/tokens).
-3. Click **Create new token** (a "Read" token is sufficient).
-4. Copy the generated token (it starts with `hf_...`).
-5. Open your `.env` file and set `OPENAI_API_KEY="your_token_here"`.
+It uses **Transformers.js (v3)** to run the `LaMini-Flan-T5-77M` model entirely inside your web browser. 
+- It dynamically utilizes **WebGPU** hardware acceleration if your graphics card supports it, for lightning-fast inference.
+- If no GPU is available, it silently falls back to CPU processing via WebAssembly (WASM).
+Zero text or case data ever leaves the local machine.
 
 OCR and text extraction use local libraries (`pdf-parse` for PDFs, `tesseract.js` for images) — no cloud calls needed for document processing.
 
@@ -77,10 +74,10 @@ Use the unassigned IO and the dashboard “Attempt restricted case” link to sh
 
 - **App:** Next.js App Router (UI + route handlers)
 - **DB:** Prisma + SQLite (Postgres-ready schema)
-- **Auth:** HttpOnly JWT cookie, demo MFA OTP, presentation role switcher (audited)
-- **AuthZ:** RBAC + case assignment + classification ABAC on **server** routes and server-rendered pages
-- **Audit:** append-only `AuditLog` rows for login, allow, and deny
-- **Adapters (interfaces / mocks):** filesystem storage, hash-chain ledger, mock CCTNS/ICJS/e-Courts/e-Forensics/e-Prosecution, local AI models
+- **Auth:** HttpOnly JWT cookie (Strict 30-min CJIS Timeout), demo MFA OTP, presentation role switcher (audited)
+- **AuthZ:** RBAC + case assignment + 5-Tier Classification ABAC on **server** routes and server-rendered pages
+- **Audit:** append-only `AuditLog` rows for login, allow, and deny (Automated 180-day retention purge)
+- **Adapters:** filesystem storage, hash-chain ledger, local WebGPU AI models
 
 Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 

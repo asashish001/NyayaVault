@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${sans.variable} ${serif.variable} font-sans antialiased 2xl:overflow-hidden`}>
+      <body className={`${sans.variable} ${serif.variable} font-sans antialiased`}>
         <ToastProvider>
           {children}
         </ToastProvider>

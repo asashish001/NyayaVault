@@ -1,4 +1,4 @@
-import { pipeline, env } from '@xenova/transformers';
+import { pipeline, env } from '@huggingface/transformers';
 
 // Configure for offline, local model usage
 // The user will download the model to public/models/ for strict air-gap.
@@ -14,7 +14,24 @@ class MyPipeline {
 
   static async getInstance(progress_callback: any = null) {
     if (this.instance === null) {
-      this.instance = await pipeline(this.task, this.model, { progress_callback } as any);
+      try {
+        // Attempt WebGPU first (Massive Speedup)
+        console.log("[AI Worker] Attempting to load model on WebGPU...");
+        this.instance = await pipeline(this.task, this.model, { 
+          progress_callback,
+          device: 'webgpu',
+          dtype: 'q4'
+        } as any);
+        console.log("[AI Worker] WebGPU initialized successfully! 🚀");
+      } catch (err) {
+        console.warn("[AI Worker] WebGPU failed or unsupported, falling back to CPU (WASM).", err);
+        // Fallback to CPU/WASM
+        this.instance = await pipeline(this.task, this.model, { 
+          progress_callback,
+          device: 'wasm',
+          dtype: 'q8'
+        } as any);
+      }
     }
     return this.instance;
   }
@@ -40,7 +57,7 @@ self.addEventListener('message', async (event: MessageEvent) => {
 
       // Generate the text
       const output = await generator(prompt, {
-        max_new_tokens: 150,
+        max_new_tokens: 100, // Reduced from 150 for faster generation
         temperature: 0.7,
       });
 
