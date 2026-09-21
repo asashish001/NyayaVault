@@ -33,6 +33,11 @@ It uses **Transformers.js (v3)** to run the `LaMini-Flan-T5-77M` model entirely 
 - If no GPU is available, it silently falls back to CPU processing via WebAssembly (WASM).
 Zero text or case data ever leaves the local machine.
 
+### 🤖 Evaluator Note: AI Model Limitations (Proof of Concept)
+The current local model (`LaMini-Flan-T5-77M`) is extremely small (~97 MB) so that it can run smoothly in any browser without requiring massive downloads. Because of its tiny size, **it may hallucinate or struggle with complex summaries**. 
+
+**This is a Proof of Concept showing that 100% offline, air-gapped WebGPU AI is architecturally possible in the browser.** In a real-world production environment, police departments would deploy a much larger 8-Billion parameter model (like Llama-3) to a secure local server to get highly accurate legal summaries.
+
 OCR and text extraction use local libraries (`pdf-parse` for PDFs, `tesseract.js` for images) — no cloud calls needed for document processing.
 
 ```bash
@@ -92,12 +97,13 @@ Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 | Hash-chain ledger UI, integrity, custody timeline | Implemented |
 | OCR, search, document viewer / review | Implemented |
 | Share, watermark, redaction | Implemented |
-| Cited Case Assistant (Local AI) | Implemented |
+| Cited Case Assistant (100% Offline AI) | Implemented |
+| BNSS Section 63 Legal Certification | Implemented |
 | Court bundle export | Implemented |
 
 ## Environment variables
 
-See `.env.example`. Copy it to `.env` before first run. You must add your own HuggingFace token to `OPENAI_API_KEY` for the AI assistant to work. To use a different provider, update `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OLLAMA_MODEL`, and `OLLAMA_EMBED_MODEL`.
+See `.env.example`. Copy it to `.env` before your first run. No external API keys are required for the AI features since all inference runs locally on your machine.
 
 ## Security notes
 

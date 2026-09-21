@@ -5,6 +5,7 @@ import { pipeline, env } from '@huggingface/transformers';
 // We set allowRemoteModels to true for prototype purposes so it downloads on first run,
 // but for production air-gap, it should be false.
 env.allowRemoteModels = false; 
+env.allowLocalModels = true;
 env.localModelPath = '/models/';
 
 class MyPipeline {
@@ -57,8 +58,10 @@ self.addEventListener('message', async (event: MessageEvent) => {
 
       // Generate the text
       const output = await generator(prompt, {
-        max_new_tokens: 100, // Reduced from 150 for faster generation
-        temperature: 0.7,
+        max_new_tokens: 150,
+        temperature: 0.1,
+        do_sample: false,
+        repetition_penalty: 1.15,
       });
 
       // Send the result back

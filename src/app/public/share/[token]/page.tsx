@@ -64,8 +64,9 @@ export default async function PublicShareView({
       redactedFieldsList.forEach(key => {
         const valToRedact = extracted[key];
         if (valToRedact) {
-          // Global case-insensitive replacement with [REDACTED]
-          const regex = new RegExp(valToRedact, "gi");
+          // Security Fix: Escape regex to prevent ReDoS and unintentional redaction
+          const escapedVal = valToRedact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(escapedVal, "gi");
           displayText = displayText.replace(regex, "██████████ [REDACTED]");
         }
       });

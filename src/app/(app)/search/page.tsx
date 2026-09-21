@@ -15,6 +15,23 @@ type SearchResult = {
   status: string;
 };
 
+// Security Fix: Safely highlight text without using dangerouslySetInnerHTML (prevents Stored XSS)
+function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
+  if (!highlight.trim()) return <span>{text}</span>;
+  // Escape regex characters to prevent ReDoS
+  const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escapedHighlight})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() 
+          ? <mark key={i} className="bg-yellow-200 text-slate-900 rounded px-1">{part}</mark> 
+          : <span key={i}>{part}</span>
+      )}
+    </span>
+  );
+}
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -117,11 +134,7 @@ function SearchContent() {
                     {doc.snippet && (
                       <div className="mt-3 p-3 bg-slate-50 text-sm text-slate-600 font-mono rounded border border-slate-100 line-clamp-3">
                         <span className="font-semibold text-slate-400 select-none mr-2">OCR MATCH</span>
-                        <span dangerouslySetInnerHTML={{
-                          __html: (qParam.trim() && doc.snippet) 
-                            ? doc.snippet.replace(new RegExp(qParam.trim(), 'gi'), match => `<mark class="bg-yellow-200 text-slate-900 rounded px-1">${match}</mark>`) 
-                            : (doc.snippet || "")
-                        }} />
+                        <HighlightedText text={doc.snippet || ""} highlight={qParam.trim()} />
                       </div>
                     )}
                   </CardContent>

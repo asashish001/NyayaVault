@@ -47,7 +47,19 @@ export function AiAssistant({ caseId }: { caseId: string }) {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
 
-    const prompt = `System Context: You are a secure AI Case Assistant. Rely ONLY on the provided documents.\nUser Query: ${userMsg}\nContext Documents:\n${context}`;
+    // Basic heuristic guardrail for greetings/short messages
+    const lowerMsg = userMsg.toLowerCase();
+    if (lowerMsg.length < 5 || ["hello", "hi", "hey", "helo"].includes(lowerMsg)) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: "assistant", content: "Hello! Please ask a specific question regarding the evidence or suspects in this case." }]);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
+    // Truncate context to ~1500 characters to prevent T5 context window overflow (max 512 tokens)
+    const safeContext = context.length > 1500 ? context.substring(0, 1500) + "..." : context;
+    const prompt = `System: You are a strict, secure AI Case Assistant. You must ONLY answer questions using the provided context. If the question is not related to the case evidence, reply "I cannot answer this."\n\nContext: ${safeContext}\nQuestion: ${userMsg}\nAnswer:`;
 
     generate(prompt, (response) => {
       if (response.type === 'COMPLETE') {
