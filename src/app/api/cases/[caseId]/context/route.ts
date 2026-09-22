@@ -15,7 +15,7 @@ export async function GET(
   const authResult = await authorizeCase({
     user,
     caseId,
-    action: "view_case",
+    action: "ask_assistant",
     userAgent: request.headers.get("user-agent"),
   });
 

@@ -88,13 +88,28 @@ export default async function CaseDetailPage({
       </div>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle>Summary</CardTitle>
+          <CardTitle>Summary (Official)</CardTitle>
           <GenerateSummaryButton caseId={caseId} />
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-slate-700">{record.summary}</p>
         </CardContent>
       </Card>
+      
+      {record.aiSummary && (
+        <Card className="border-indigo-200 bg-indigo-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-indigo-900 flex items-center gap-2">
+              <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">AI GENERATED</span>
+              AI Case Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-indigo-900/80 italic">{record.aiSummary}</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Documents</CardTitle>

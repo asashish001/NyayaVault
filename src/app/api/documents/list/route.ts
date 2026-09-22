@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (doc.ocrData?.extractedData) {
       try {
         const parsed = JSON.parse(doc.ocrData.extractedData);
-        ocrKeys = Object.keys(parsed);
+        ocrKeys = Object.keys(parsed.fields || {});
       } catch (e) {
         // ignore JSON parse error
       }

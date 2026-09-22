@@ -3,7 +3,7 @@
 **Team:** S.W.O.R.D.  
 **Tagline:** Secure Evidence. Stronger Justice.
 
-NyayaVault is a prototype. It is a court-ready evidence-document intelligence platform: encrypted off-chain storage, SHA-256 version integrity, an append-only audit trail, a tamper-evident hash chain (not a public blockchain), OCR, controlled RAG, and privacy-aware sharing. It is **not** a national ICJS/CCTNS replacement.
+NyayaVault is a prototype. It is a court-ready evidence-document intelligence platform: encrypted off-chain storage, SHA-256 version integrity, an append-only audit trail, a tamper-evident hash chain (not a public blockchain), OCR, local AI summarization, and privacy-aware sharing. It is **not** a national ICJS/CCTNS replacement.
 
 All people, stations, FIR numbers, and facts in the demo are **fictional**.
 
@@ -81,7 +81,7 @@ Use the unassigned IO and the dashboard “Attempt restricted case” link to sh
 - **DB:** Prisma + SQLite (Postgres-ready schema)
 - **Auth:** HttpOnly JWT cookie (Strict 30-min CJIS Timeout), demo MFA OTP, presentation role switcher (audited)
 - **AuthZ:** RBAC + case assignment + 5-Tier Classification ABAC on **server** routes and server-rendered pages
-- **Audit:** append-only `AuditLog` rows for login, allow, and deny (Automated 180-day retention purge)
+- **Audit:** append-only `AuditLog` rows for login, allow, and deny
 - **Adapters:** filesystem storage, hash-chain ledger, local WebGPU AI models
 
 Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
@@ -97,7 +97,7 @@ Details: [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md)
 | Hash-chain ledger UI, integrity, custody timeline | Implemented |
 | OCR, search, document viewer / review | Implemented |
 | Share, watermark, redaction | Implemented |
-| Cited Case Assistant (100% Offline AI) | Implemented |
+| Local AI Assistant (100% Offline AI) | Implemented |
 | BNSS Section 63 Legal Certification | Implemented |
 | Court bundle export | Implemented |
 
@@ -118,8 +118,9 @@ See `.env.example`. Copy it to `.env` before your first run. No external API key
 
 ## Limitations
 
-- No real malware engine, KMS/HSM, or Class-3 DSC.
-- No live CCTNS/ICJS/e-Courts calls.
+- No real malware engine; the virus scanning status in the UI is currently simulated.
+- No live CCTNS/ICJS/e-Courts calls; responses are mocked.
+- AI features are currently limited to basic document summarization and extraction (Proof of Concept). We do **not** provide "100% cited retrieval" or deep vector RAG against the entire case corpus in this version.
 - AES-256 at rest currently uses a local filesystem storage adapter, not a remote KMS-backed bucket.
 
 ## License

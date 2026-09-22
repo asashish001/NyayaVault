@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase, writeAudit } from "@/lib/audit";
 import { getStorage } from "@/lib/storage";
-import { computeSha256 } from "@/lib/integrity";
+import { computeSha256, verifyLedgerChain } from "@/lib/integrity";
 
 export async function GET(
   request: NextRequest,
@@ -75,14 +75,14 @@ export async function GET(
   // Get ledger event
   let anchoredHash = versionRecord.sha256Hash;
   let ledgerTxRef = versionRecord.ledgerProofId;
+  let eventHash = null;
 
   if (versionRecord.ledgerProofId) {
     const ledgerEvent = await prisma.ledgerEvent.findUnique({
       where: { proofId: versionRecord.ledgerProofId }
     });
     if (ledgerEvent) {
-      // The eventHash of the ledger represents the hash of the whole event string, 
-      // but we can just surface the stored metadata hash for simplicity.
+      eventHash = ledgerEvent.eventHash;
       try {
         const meta = JSON.parse(ledgerEvent.metadataJson);
         if (meta.hash) anchoredHash = meta.hash;
@@ -92,7 +92,16 @@ export async function GET(
     }
   }
 
-  const isMatch = computedHash === versionRecord.sha256Hash;
+  const chainResult = await verifyLedgerChain();
+  const isChainValid = chainResult.valid;
+
+  const isMatch = (computedHash === versionRecord.sha256Hash) && (computedHash === anchoredHash) && isChainValid;
+
+  const newStatus = isMatch ? "ANCHORED" : "MISMATCH";
+  await prisma.document.update({
+    where: { id: document.id },
+    data: { anchorStatus: newStatus }
+  });
 
   await writeAudit({
     actorId: user.id,
@@ -103,7 +112,7 @@ export async function GET(
     documentId: document.id,
     ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
-    reason: isMatch ? "Hash verified successfully" : "Hash mismatch detected",
+    reason: isMatch ? "Hash and ledger chain verified successfully" : `Integrity failure. ${!isChainValid ? chainResult.error : 'Hash mismatch'}`,
   });
 
   return NextResponse.json({
@@ -111,5 +120,8 @@ export async function GET(
     computedHash,
     anchoredHash,
     ledgerTxRef,
+    chainValid: isChainValid,
+    chainError: chainResult.error,
+    eventHash
   });
 }

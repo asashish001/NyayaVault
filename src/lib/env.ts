@@ -14,12 +14,25 @@ if (process.env.NODE_ENV !== "production") {
   globalForEnv.__DEV_SESSION_SECRET = DEV_RANDOM_SECRET;
 }
 
+const sessionSecret = process.env.SESSION_SECRET ?? DEV_RANDOM_SECRET;
+const encryptionKey = process.env.ENCRYPTION_KEY ?? "";
+const isProd = process.env.NODE_ENV === "production";
+
+if (isProd) {
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32 || process.env.SESSION_SECRET.startsWith("replace-with")) {
+    throw new Error("SESSION_SECRET missing, short, or default in production");
+  }
+  if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY === "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef") {
+    throw new Error("ENCRYPTION_KEY missing or default in production");
+  }
+}
+
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "file:./dev.db",
-  sessionSecret: process.env.SESSION_SECRET ?? DEV_RANDOM_SECRET,
-  encryptionKey: process.env.ENCRYPTION_KEY ?? "",
+  sessionSecret,
+  encryptionKey,
   demoOtp: process.env.DEMO_OTP ?? "000000",
-  demoRoleSwitch: (process.env.DEMO_ROLE_SWITCH ?? "true") === "true",
+  demoRoleSwitch: !isProd && (process.env.DEMO_ROLE_SWITCH ?? "false") === "true",
   llmMode: (process.env.LLM_MODE ?? "mock") as "mock" | "live",
   rateLimitRpm: Number(process.env.RATE_LIMIT_RPM ?? "120"),
   storageAdapter: process.env.STORAGE_ADAPTER ?? "filesystem",

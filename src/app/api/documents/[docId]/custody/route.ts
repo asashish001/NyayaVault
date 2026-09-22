@@ -68,7 +68,7 @@ export async function POST(
   const authResult = await authorizeCase({
     user,
     caseId: document.caseId,
-    action: "view_document", // Requires edit permission to transfer custody
+    action: "transfer_custody",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -83,8 +83,18 @@ export async function POST(
   }
 
   // Extract tamper-proof metadata from the signed token itself
-  const { toDepartment, reason } = payload as any;
+  const { actorId, documentId, action, toDepartment, reason } = payload as any;
   const signatureRef = signedToken;
+
+  if (actorId !== user.id) {
+    return NextResponse.json({ error: "Signature rejected: Token is bound to a different user/actor." }, { status: 403 });
+  }
+  if (documentId !== docId) {
+    return NextResponse.json({ error: "Signature rejected: Token is bound to a different document." }, { status: 403 });
+  }
+  if (action !== "transfer_custody") {
+    return NextResponse.json({ error: "Signature rejected: Token action does not match." }, { status: 403 });
+  }
 
   // Record Ledger Anchor for Custody Event (Rule R9)
   const ledgerEvent = await appendLedgerEvent({

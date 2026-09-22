@@ -73,7 +73,7 @@ export function LoginForm() {
           </h2>
 
           <p className="text-base text-slate-600 text-justify font-semibold leading-relaxed max-w-md mb-8">
-            Court-ready evidence-document intelligence: encrypted off-chain storage, hash-chain integrity, chain of custody, and a cited case assistant. This prototype is not CCTNS, ICJS, or e-Courts.
+            Court-ready evidence-document intelligence: encrypted off-chain storage, hash-chain integrity, chain of custody, and a local AI assistant. This prototype is not CCTNS, ICJS, or e-Courts.
           </p>
 
           {/* Feature Grid */}

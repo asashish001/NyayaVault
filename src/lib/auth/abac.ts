@@ -18,7 +18,12 @@ export type AccessAction =
   | "export"
   | "view_audit"
   | "manage_demo"
-  | "ask_assistant";
+  | "ask_assistant"
+  | "accept_custody"
+  | "review_ocr"
+  | "create_case"
+  | "edit_case"
+  | "archive";
 
 export type Policy = {
   requiresAssignment: boolean;
@@ -32,7 +37,7 @@ export const ROLE_POLICY: Record<Role, Policy> = {
     requiresAssignment: true,
     readOnly: false,
     maxClassification: "PROTECTED_VICTIM_WITNESS",
-    allowed: ["view_case", "view_document", "upload", "transfer_custody", "share", "ask_assistant"],
+    allowed: ["view_case", "view_document", "upload", "transfer_custody", "share", "ask_assistant", "accept_custody", "review_ocr", "create_case", "edit_case"],
   },
   SHO: {
     requiresAssignment: true,
@@ -47,25 +52,30 @@ export const ROLE_POLICY: Record<Role, Policy> = {
       "share",
       "view_audit",
       "ask_assistant",
+      "accept_custody",
+      "review_ocr",
+      "create_case",
+      "edit_case",
+      "archive"
     ],
   },
   FORENSIC_EXPERT: {
     requiresAssignment: true,
     readOnly: false,
     maxClassification: "PROTECTED_VICTIM_WITNESS",
-    allowed: ["view_case", "view_document", "upload", "ask_assistant"],
+    allowed: ["view_case", "view_document", "upload", "ask_assistant", "accept_custody", "review_ocr"],
   },
   PROSECUTOR: {
     requiresAssignment: true,
     readOnly: true,
     maxClassification: "PROTECTED_VICTIM_WITNESS",
-    allowed: ["view_case", "view_document", "export", "ask_assistant"],
+    allowed: ["view_case", "view_document", "export", "ask_assistant", "accept_custody"],
   },
   JUDGE_AUDITOR: {
     requiresAssignment: true,
     readOnly: true,
     maxClassification: "PROTECTED_VICTIM_WITNESS",
-    allowed: ["view_case", "view_document", "view_audit", "export", "ask_assistant"],
+    allowed: ["view_case", "view_document", "view_audit", "export", "ask_assistant", "archive"],
   },
   ADMIN: {
     requiresAssignment: true,

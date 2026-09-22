@@ -34,7 +34,7 @@ export async function POST(
   const authResult = await authorizeCase({
     user,
     caseId: document.caseId,
-    action: "view_document", // Requires share permission
+    action: "share",
     userAgent: request.headers.get("user-agent"),
   });
 

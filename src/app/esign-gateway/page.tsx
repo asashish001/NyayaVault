@@ -51,8 +51,12 @@ function ESignForm() {
   return (
     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full border-t-4 border-orange-500">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">e-Sign Gateway (Demo)</h1>
-        <p className="text-sm text-slate-500">Demo digital signature — cryptographic simulation</p>
+        <h1 className="text-2xl font-bold text-slate-800">
+          e-Sign Gateway <span className="text-red-600 font-extrabold uppercase text-lg ml-2 border-2 border-red-600 px-2 rounded">[SIMULATION]</span>
+        </h1>
+        <p className="text-sm font-bold text-red-600 mt-2">
+          WARNING: This is a simulation. It is NOT a live CCA-licensed DSC integration.
+        </p>
       </div>
 
       <div className="bg-slate-50 p-4 rounded text-sm mb-6 border border-slate-200">
@@ -85,9 +89,9 @@ function ESignForm() {
         </button>
       </form>
 
-      <div className="mt-8 text-center text-xs text-slate-400">
-        <p>Powered by Mock ESP Infrastructure</p>
-        <p> Prototype</p>
+      <div className="mt-8 text-center text-xs font-bold text-red-500">
+        <p>*** SIMULATION ONLY ***</p>
+        <p>Not legally binding. No CCA-licensed DSC integrated.</p>
       </div>
     </div>
   );

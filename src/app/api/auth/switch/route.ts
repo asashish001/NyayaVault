@@ -8,12 +8,19 @@ import { writeAudit, clientIp } from "@/lib/audit";
 const schema = z.object({ userId: z.string().min(1) });
 
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const current = await getSessionUser();
   if (!current) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
   if (!env.demoRoleSwitch) {
     return NextResponse.json({ error: "Role switcher disabled" }, { status: 403 });
+  }
+  if (!current.email.endsWith("@nyayavault.demo")) {
+    return NextResponse.json({ error: "Only demo accounts can switch roles" }, { status: 403 });
   }
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -24,6 +31,9 @@ export async function POST(request: NextRequest) {
   const target = await prisma.user.findUnique({ where: { id: parsed.data.userId } });
   if (!target) {
     return NextResponse.json({ error: "Unknown demo user" }, { status: 404 });
+  }
+  if (!target.email.endsWith("@nyayavault.demo")) {
+    return NextResponse.json({ error: "Target is not a demo user" }, { status: 403 });
   }
 
   const token = await createSessionToken({

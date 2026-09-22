@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase, writeAudit } from "@/lib/audit";
+import { verifyLedgerChain } from "@/lib/integrity";
 
 export default async function CaseCourtBundlePage({
   params
@@ -59,6 +60,8 @@ export default async function CaseCourtBundlePage({
     userAgent: "CaseCourtBundleGenerator",
     reason: "Generated Case-Level Court Bundle.",
   });
+
+  const ledgerVerification = await verifyLedgerChain();
 
   const firDocs = caseRecord.documents.filter(d => d.type === "FIR");
   const witnessDocs = caseRecord.documents.filter(d => d.type === "WITNESS_STATEMENT");
@@ -202,6 +205,12 @@ export default async function CaseCourtBundlePage({
             Electronically Certified
           </div>
           <h2 className="font-bold text-2xl uppercase mb-6 text-center border-b border-slate-300 pb-4">Master Section 63 (BSA) Certificate</h2>
+          
+          <div className={`p-4 mb-6 rounded border ${ledgerVerification.valid ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+            <h3 className="font-bold mb-1">Global Ledger Verification Status: {ledgerVerification.valid ? '✅ INTACT' : '❌ COMPROMISED'}</h3>
+            {!ledgerVerification.valid && <p className="text-sm font-mono text-red-600">{ledgerVerification.error}</p>}
+          </div>
+
           <p className="text-sm mb-6 leading-relaxed">
             This is to certify under Section 63 (read with Section 61 for legal validity of electronic records) of the Bharatiya Sakshya Adhiniyam, 2023 that the electronic records listed in this compilation 
             were produced by a computer system operating properly at the time of creation. The cryptographic hashes and ledger proofs 

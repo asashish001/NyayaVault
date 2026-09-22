@@ -20,10 +20,19 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get("file") as File | null;
-  const caseId = formData.get("caseId") as string | null;
+  let caseId = formData.get("caseId") as string | null;
   const title = formData.get("title") as string | null;
   const docType = formData.get("docType") as string | null;
   const existingDocId = formData.get("documentId") as string | null;
+
+  if (existingDocId) {
+    const doc = await prisma.document.findUnique({ where: { id: existingDocId } });
+    if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    if (caseId && doc.caseId !== caseId) {
+      return NextResponse.json({ error: "caseId mismatch" }, { status: 400 });
+    }
+    caseId = doc.caseId; // Derive caseId from the document
+  }
 
   if (!file || !caseId) {
     return NextResponse.json({ error: "Missing file or caseId" }, { status: 400 });

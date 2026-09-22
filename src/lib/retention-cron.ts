@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { createAuditLog } from "./audit";
+import { writeAudit } from "./audit";
 
 /**
  * DPDP Act Compliance & Data Minimization:
@@ -11,11 +11,12 @@ export async function runRetentionPurge() {
   console.log("[Retention Cron] Starting DPDP Data Minimization scan...");
 
   // Find all documents in ARCHIVED cases that are not already purged
-  // In a real system, you'd check `retentionState` date calculations.
+  // AND are explicitly not under legal hold.
   const expiredDocuments = await prisma.document.findMany({
     where: {
       status: "ARCHIVED",
-      retentionState: { not: "PURGED" }, // Assuming retentionState changes to PURGED
+      retentionState: { not: "PURGED" },
+      legalHold: false, // Critical Fix (E1): Never purge documents under legal hold
       case: {
         status: "ARCHIVED"
       }
@@ -52,11 +53,11 @@ export async function runRetentionPurge() {
       }
     });
 
-    // 3. Log the system action in the audit log for CJIS/ISO compliance
-    await createAuditLog({
+    // 3. Log the system action in the audit log
+    await writeAudit({
       actorId: undefined, // System action
       role: "SYSTEM",
-      action: "EXPORT", // Can use EXPORT/APPROVAL or another suitable enum. Let's use INTEGRITY_VERIFICATION or similar if 'PURGE' is missing.
+      action: "EXPORT", 
       caseId: doc.caseId,
       documentId: doc.id,
       ip: "127.0.0.1",
@@ -69,21 +70,8 @@ export async function runRetentionPurge() {
     console.log(`[Retention Cron] Successfully purged PII for document ${doc.id}`);
   }
 
-  // 4. Audit Log 180-Day Retention Policy
-  const logRetentionDate = new Date();
-  logRetentionDate.setDate(logRetentionDate.getDate() - 180);
-
-  const deletedLogs = await prisma.auditLog.deleteMany({
-    where: {
-      createdAt: {
-        lt: logRetentionDate,
-      },
-    },
-  });
-
-  if (deletedLogs.count > 0) {
-    console.log(`[Retention Cron] Purged ${deletedLogs.count} audit logs older than 180 days.`);
-  }
+  // Critical Fix (E2): Removed the code that blindly deleted Audit Logs older than 180 days.
+  // In evidentiary systems, Audit and Custody logs must be retained permanently.
 
   console.log("[Retention Cron] Scan complete.");
 }

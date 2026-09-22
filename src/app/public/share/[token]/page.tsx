@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { headers } from "next/headers";
+import { redact } from "@/lib/redact";
 
 export default async function PublicShareView({
   params
@@ -58,20 +59,15 @@ export default async function PublicShareView({
     }
   }
 
-  if (shareToken.document.ocrData?.extractedData && redactedFieldsList.length > 0) {
+  let redactionCount = 0;
+  if (shareToken.document.ocrData?.extractedData) {
     try {
       const extracted = JSON.parse(shareToken.document.ocrData.extractedData);
-      redactedFieldsList.forEach(key => {
-        const valToRedact = extracted[key];
-        if (valToRedact) {
-          // Security Fix: Escape regex to prevent ReDoS and unintentional redaction
-          const escapedVal = valToRedact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(escapedVal, "gi");
-          displayText = displayText.replace(regex, "██████████ [REDACTED]");
-        }
-      });
+      const result = redact(displayText, extracted, redactedFieldsList);
+      displayText = result.text;
+      redactionCount = result.count;
     } catch (e) {
-      // Ignore
+      // Ignore parse error
     }
   }
 
@@ -117,9 +113,9 @@ export default async function PublicShareView({
         <div className="p-8">
           <div className="mb-6 pb-4 border-b border-slate-200">
             <h2 className="text-lg font-semibold text-slate-800">Document Content (OCR Extracted)</h2>
-            {redactedFieldsList.length > 0 && (
+            {redactionCount > 0 && (
               <p className="text-xs text-red-600 font-semibold mt-1">
-                Certain sensitive fields ({redactedFieldsList.join(", ")}) have been actively redacted from this view.
+                {redactionCount} occurrence{redactionCount > 1 ? "s" : ""} of sensitive data {redactionCount > 1 ? "have" : "has"} been actively redacted from this view.
               </p>
             )}
           </div>

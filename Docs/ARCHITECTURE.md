@@ -25,7 +25,7 @@ flowchart TB
     HASH[SHA-256 / versions - Phase 2]
     LEDGER[Hash-chain ledger - Phase 3]
     OCR[OCR adapter - Phase 4]
-    RAG[Cited Case Assistant - Phase 6]
+    AI[Local AI Assistant - Phase 6]
   end
 
   subgraph data [Data]
@@ -50,7 +50,7 @@ flowchart TB
   API --> AUDIT --> SQLITE
   HASH --> FS
   HASH --> LEDGER --> SQLITE
-  RAG -.-> OCR
+  AI -.-> OCR
   API --> CCTNS
   API --> ICJS
   API --> EC
@@ -72,7 +72,7 @@ A **single Next.js process** keeps `npm run dev` simple for the . Storage, OCR, 
 
 ## Later-phase flows (designed, not fully built)
 
-Upload → MIME/size validation → encrypt to object store → immutable `DocumentVersion` → SHA-256 → hash-chain event → OCR/index → optional share/redact → RAG over permitted chunks only.
+Upload → simulated malware/MIME/size validation → encrypt to object store → immutable `DocumentVersion` → SHA-256 → hash-chain event → OCR/index → optional share/redact → local AI summarization over authorized context (no deep vector RAG yet).
 
 ## What is stored where
 
@@ -81,7 +81,7 @@ Upload → MIME/size validation → encrypt to object store → immutable `Docum
 | SQLite | Users, cases, assignments, policies, documents metadata, versions metadata, audit, ledger events |
 | Filesystem (Phase 2) | Encrypted file bytes |
 | Hash chain | Hashes, event type, actor id, timestamps, proof id — **never** raw documents or PII |
-| LLM (Phase 6) | Only retrieved, possibly redacted chunks for one authorized case |
+| LLM (Phase 6) | Full case context passed to local WebWorker model |
 
 ## Production path
 

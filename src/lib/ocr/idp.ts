@@ -1,10 +1,13 @@
 import Tesseract, { createWorker, Worker } from "tesseract.js";
+import path from "path";
 
 type ExtractedFields = {
   caseNumber?: string;
   date?: string;
   policeStation?: string;
   accusedNames?: string[];
+  victimNames?: string[];
+  witnessNames?: string[];
   sections?: string[];
 };
 
@@ -50,12 +53,24 @@ function extractFields(text: string, docType: string): { data: ExtractedFields; 
     conf.accusedNames = 0.55; 
   }
 
+  const victimMatch = text.match(/Victim(?:s)?\s*[:\-]\s*([^\n\r]+)/i);
+  if (victimMatch) {
+    data.victimNames = victimMatch[1].split(",").map((n) => n.trim());
+    conf.victimNames = 0.65;
+  }
+
+  const witnessMatchStr = text.match(/Witness(?:es)?\s*[:\-]\s*([^\n\r]+)/i);
+  if (witnessMatchStr) {
+    data.witnessNames = witnessMatchStr[1].split(",").map((n) => n.trim());
+    conf.witnessNames = 0.7;
+  }
+
   if (docType === "WITNESS_STATEMENT") {
     // Try to find "My name is [Name]" or "Statement of [Name]" or "Signed, [Name]"
     const witnessMatch = text.match(/(?:My name i[cs]|Statement of)\s+([A-Z][A-Za-z\s]+)(?:,|\.)/i) || text.match(/Signed,?\s*([^\n\r]+)/i) || text.match(/Cianed,?\s*([^\n\r]+)/i);
     if (witnessMatch) {
-      data.accusedNames = [witnessMatch[1].trim()]; // reusing field for witness name
-      conf.accusedNames = 0.75;
+      data.witnessNames = [witnessMatch[1].trim()]; // properly mapped to witness instead of accused
+      conf.witnessNames = 0.75;
     }
     
     // Try to find Ref: or Case:
@@ -108,7 +123,10 @@ export async function processDocument(
   if (mimeType.startsWith("image/")) {
     let worker: Worker | null = null;
     try {
-      worker = await createWorker("eng");
+      worker = await createWorker("eng+hin", 1, {
+        langPath: path.join(process.cwd(), "models", "tesseract"),
+        gzip: true, // projectnaptha v4.0.0 uses gzip
+      });
       const { data } = await worker.recognize(buffer);
       rawText = data.text;
       overallConfidence = data.confidence / 100;

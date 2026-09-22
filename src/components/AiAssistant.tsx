@@ -21,23 +21,7 @@ export function AiAssistant({ caseId }: { caseId: string }) {
   const [context, setContext] = useState<string>("");
   const { generate } = useTransformersWorker();
 
-  // Fetch context once when the component mounts
-  useEffect(() => {
-    async function fetchContext() {
-      try {
-        const res = await fetch(`/api/cases/${caseId}/context`);
-        const data = await res.json();
-        if (data.context) {
-          setContext(data.context);
-        }
-      } catch (err) {
-        console.error("Failed to fetch case context", err);
-      }
-    }
-    if (caseId) {
-      fetchContext();
-    }
-  }, [caseId]);
+  // Context is now fetched dynamically per-query via RAG
 
   async function sendMessage(text: string) {
     if (!text.trim() || !caseId) return;
@@ -49,7 +33,7 @@ export function AiAssistant({ caseId }: { caseId: string }) {
 
     // Basic heuristic guardrail for greetings/short messages
     const lowerMsg = userMsg.toLowerCase();
-    if (lowerMsg.length < 5 || ["hello", "hi", "hey", "helo"].includes(lowerMsg)) {
+    if (lowerMsg.length < 5 || ["hello", "hi", "hey", "hii", "helo", "helooo"].includes(lowerMsg)) {
       setTimeout(() => {
         setMessages(prev => [...prev, { role: "assistant", content: "Hello! Please ask a specific question regarding the evidence or suspects in this case." }]);
         setLoading(false);
@@ -57,20 +41,32 @@ export function AiAssistant({ caseId }: { caseId: string }) {
       return;
     }
 
-    // Truncate context to ~1500 characters to prevent T5 context window overflow (max 512 tokens)
-    const safeContext = context.length > 1500 ? context.substring(0, 1500) + "..." : context;
-    const prompt = `System: You are a strict, secure AI Case Assistant. You must ONLY answer questions using the provided context. If the question is not related to the case evidence, reply "I cannot answer this."\n\nContext: ${safeContext}\nQuestion: ${userMsg}\nAnswer:`;
+    try {
+      const res = await fetch(`/api/cases/${caseId}/rag-context`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: userMsg })
+      });
+      const data = await res.json();
+      const safeContext = data.context || "No context found.";
 
-    generate(prompt, (response) => {
-      if (response.type === 'COMPLETE') {
-        setMessages(prev => [...prev, { role: "assistant", content: response.payload.result }]);
-        setLoading(false);
-      } else if (response.type === 'ERROR') {
-        setMessages(prev => [...prev, { role: "assistant", content: `Error: ${response.payload.error}` }]);
-        setLoading(false);
-      }
-      // Note: you could handle 'PROGRESS' here to show a streaming effect or download progress
-    });
+      const prompt = `System: You are a strict, secure AI Case Assistant. You must ONLY answer questions using the provided context blocks. Do not invent information. If the answer is not found in the context, reply "Not found in documents." You MUST cite the source of your information using the provided [DocID: X] tags.\n\n<context>\n${safeContext}\n</context>\n\nQuestion: ${userMsg}\nAnswer:`;
+
+      generate(prompt, (response) => {
+        if (response.type === 'COMPLETE') {
+          setMessages(prev => [...prev, { role: "assistant", content: response.payload.result }]);
+          setLoading(false);
+        } else if (response.type === 'ERROR') {
+          setMessages(prev => [...prev, { role: "assistant", content: `Error: ${response.payload.error}` }]);
+          setLoading(false);
+        }
+        // Note: you could handle 'PROGRESS' here to show a streaming effect or download progress
+      });
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, { role: "assistant", content: `Error fetching RAG context.` }]);
+      setLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {

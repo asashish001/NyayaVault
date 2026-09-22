@@ -16,7 +16,7 @@ export async function POST(
   const authResult = await authorizeCase({
     user,
     caseId,
-    action: "view_case",
+    action: "edit_case",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -26,7 +26,7 @@ export async function POST(
 
   await prisma.caseRecord.update({
     where: { id: caseId },
-    data: { summary: summary }
+    data: { aiSummary: summary }
   });
 
   return NextResponse.json({ success: true });

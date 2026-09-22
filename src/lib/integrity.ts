@@ -60,3 +60,43 @@ export async function appendLedgerEvent(params: {
     return prisma.$transaction(execute);
   }
 }
+
+export async function verifyLedgerChain(): Promise<{ valid: boolean; error?: string }> {
+  const events = await prisma.ledgerEvent.findMany({
+    orderBy: { sequence: "asc" },
+  });
+
+  let expectedPrevHash = "GENESIS";
+  let expectedSequence = 1;
+
+  for (const event of events) {
+    if (event.sequence !== expectedSequence) {
+      return { valid: false, error: `Sequence gap detected at sequence ${event.sequence}. Expected ${expectedSequence}.` };
+    }
+    if (event.prevHash !== expectedPrevHash) {
+      return { valid: false, error: `Hash chain broken at sequence ${event.sequence}. Expected prevHash ${expectedPrevHash}, got ${event.prevHash}.` };
+    }
+
+    const eventString = [
+      event.sequence.toString(),
+      event.prevHash,
+      event.eventType,
+      event.actorId || "",
+      event.documentId || "",
+      event.versionId || "",
+      event.metadataJson,
+      event.timestamp.toISOString()
+    ].join("|");
+
+    const recomputedHash = computeSha256(Buffer.from(eventString, "utf-8"));
+
+    if (recomputedHash !== event.eventHash) {
+      return { valid: false, error: `Event hash mismatch at sequence ${event.sequence}. Recomputed hash does not match stored hash.` };
+    }
+
+    expectedPrevHash = event.eventHash;
+    expectedSequence++;
+  }
+
+  return { valid: true };
+}

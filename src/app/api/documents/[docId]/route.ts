@@ -62,7 +62,7 @@ export async function DELETE(
   const authResult = await authorizeCase({
     user,
     caseId: document.caseId,
-    action: "view_case",
+    action: "archive",
     userAgent: request.headers.get("user-agent"),
   });
 

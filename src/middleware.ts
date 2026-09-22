@@ -5,10 +5,10 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
 
+import { env } from "@/lib/env";
+
 function secret() {
-  return new TextEncoder().encode(
-    process.env.SESSION_SECRET ?? "replace-with-a-long-random-demo-secret-32chars",
-  );
+  return new TextEncoder().encode(env.sessionSecret);
 }
 
 export async function middleware(request: NextRequest) {
@@ -25,6 +25,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/images") ||
     pathname.startsWith("/favicon") ||
+    pathname.startsWith("/public/share/") ||
     PUBLIC_PATHS.includes(pathname)
   ) {
     return NextResponse.next();

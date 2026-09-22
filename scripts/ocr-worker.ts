@@ -54,6 +54,22 @@ async function run() {
     const needsReview = Object.values(ocrResult.fieldConfidence).some(c => c < 0.7);
     const nextStatus = needsReview ? "MANUAL_REVIEW" : "APPROVED";
 
+    const { chunkText, generateEmbedding } = await import("../src/lib/ai/embeddings");
+    const chunks = chunkText(ocrResult.rawText);
+    const chunkData: { documentId: string, text: string, embedding: string }[] = [];
+    for (const text of chunks) {
+      try {
+        const emb = await generateEmbedding(text);
+        chunkData.push({
+          documentId: docId,
+          text: text,
+          embedding: JSON.stringify(emb)
+        });
+      } catch (e) {
+        console.error("[OCR WORKER] Failed to embed chunk", e);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.ocrExtraction.upsert({
         where: { documentId: docId },
@@ -80,6 +96,11 @@ async function run() {
         where: { id: docId },
         data: { status: nextStatus }
       });
+      
+      await tx.documentChunk.deleteMany({ where: { documentId: docId } });
+      if (chunkData.length > 0) {
+        await tx.documentChunk.createMany({ data: chunkData });
+      }
     });
 
     await writeAuditMock({
