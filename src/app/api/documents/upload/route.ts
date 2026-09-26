@@ -84,6 +84,16 @@ export async function POST(request: NextRequest) {
   }
 
   if (scanResult === "FLAGGED") {
+    await prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        role: user.role,
+        caseId: caseId,
+        action: "UPLOAD",
+        result: "DENIED",
+        reason: `Malware detected in file: ${file.name}`
+      }
+    });
     return NextResponse.json({ error: "Malware detected. Upload rejected." }, { status: 400 });
   }
   

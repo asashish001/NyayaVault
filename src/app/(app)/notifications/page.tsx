@@ -108,6 +108,30 @@ async function NotificationsContent() {
     });
   }
 
+  // 5. Malware Alerts
+  const malwareAlerts = await prisma.auditLog.findMany({
+    where: {
+      action: "UPLOAD",
+      result: "DENIED",
+      reason: { contains: "Malware detected in file:" },
+      ...(user.role !== "ADMIN" && user.role !== "JUDGE_AUDITOR" ? { actorId: user.id } : {})
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20
+  });
+
+  for (const log of malwareAlerts) {
+    notifications.push({
+      id: `malware-${log.id}`,
+      type: "SECURITY",
+      title: "Malware Detected",
+      message: log.reason || "Malware detected",
+      time: log.createdAt,
+      icon: ShieldAlert,
+      color: "text-red-600 bg-red-100 border-red-200"
+    });
+  }
+
   // Sort by time descending
   notifications.sort((a, b) => b.time.getTime() - a.time.getTime());
 

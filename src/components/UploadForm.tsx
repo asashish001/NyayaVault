@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Loader2, Circle, FileCheck, X, Plus, UploadCloud } from "lucide-react";
+import { CheckCircle2, Loader2, Circle, FileCheck, X, Plus, UploadCloud, ShieldAlert } from "lucide-react";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ReviewForm } from "./ReviewForm";
 
@@ -33,6 +33,7 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
   const [caseId, setCaseId] = useState(cases.length > 0 ? cases[0].id : "");
   const [drafts, setDrafts] = useState<DocumentDraft[]>([]);
   const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
+  const [malwareAlert, setMalwareAlert] = useState<{fileName: string, error: string} | null>(null);
 
   // We are in "pipeline phase" if ANY draft is beyond idle/error
   const isInPipelinePhase = drafts.length > 0 && drafts.some(d => d.state !== "idle" && d.state !== "error");
@@ -142,14 +143,19 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
             docId: data.documentId,
             state: "polling",
             uiStep: 0,
-            actualStep: 4, // Upload, Hash, Encrypt, Anchor are done synchronously
+            actualStep: 5, // Upload, Scan, Hash, Encrypt, Anchor are done synchronously
           });
           
           // Trigger background OCR task
           fetch(`/api/documents/${data.documentId}/process-ocr`, { method: "POST" }).catch(console.error);
         } else {
           updateDraft(draft.id, { state: "error", errorMessage: data.error });
-          toast.error(`Upload failed for ${draft.title}: ` + data.error);
+          const errLower = data.error.toLowerCase();
+          if (errLower.includes("malware") || errLower.includes("signature")) {
+            setMalwareAlert({ fileName: draft.file.name, error: data.error });
+          } else {
+            toast.error(`Upload failed for ${draft.title}: ` + data.error);
+          }
         }
       } catch (err) {
         updateDraft(draft.id, { state: "error", errorMessage: "Network error occurred." });
@@ -165,29 +171,64 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
     setIsUploadingGlobal(false);
   }
 
+  const malwareModal = malwareAlert && (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95">
+        <div className="bg-red-50 p-4 border-b border-red-100 flex items-center gap-3">
+          <ShieldAlert className="h-6 w-6 text-red-600" />
+          <h3 className="font-bold text-red-900 text-lg">CRITICAL: Malware Detected</h3>
+        </div>
+        <div className="p-6 text-slate-700">
+          <p className="mb-4">
+            Malware or a malicious file signature was detected during the scanning of your file:
+          </p>
+          <p className="font-mono bg-slate-100 p-2 rounded text-sm mb-4 truncate text-center font-bold text-red-700">
+            {malwareAlert.fileName}
+          </p>
+          <p className="text-sm font-medium mb-4 text-red-600">
+            Error: {malwareAlert.error}
+          </p>
+          <p className="text-sm text-slate-500">
+            The upload has been completely blocked and aborted. This incident has been logged in the system Audit Trail.
+          </p>
+        </div>
+        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+          <Button onClick={() => setMalwareAlert(null)} className="bg-red-600 hover:bg-red-700 text-white font-bold">
+            Acknowledge & Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isInPipelinePhase) {
     return (
-      <div className="space-y-6">
-        {drafts.map((draft) => (
-          <DocumentProcessor 
-            key={draft.id} 
-            draft={draft} 
-            updateDraft={updateDraft} 
-          />
-        ))}
-        
-        {isAllDone && (
-          <Button onClick={resetAll} className="mt-4 bg-[#0F294D] hover:bg-[#0F294D]/90 text-white w-full h-12 font-bold shadow-md">
-            Upload More Documents
-          </Button>
-        )}
-      </div>
+      <>
+        {malwareModal}
+        <div className="space-y-6">
+          {drafts.map((draft) => (
+            <DocumentProcessor 
+              key={draft.id} 
+              draft={draft} 
+              updateDraft={updateDraft} 
+            />
+          ))}
+          
+          {isAllDone && (
+            <Button onClick={resetAll} className="mt-4 bg-[#0F294D] hover:bg-[#0F294D]/90 text-white w-full h-12 font-bold shadow-md">
+              Upload More Documents
+            </Button>
+          )}
+        </div>
+      </>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <>
+      {malwareModal}
+      <Card>
+        <CardHeader>
         <CardTitle>Upload Documents</CardTitle>
       </CardHeader>
       <CardContent>
@@ -304,6 +345,7 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }
 
@@ -319,7 +361,7 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
       }, 600);
       return () => clearTimeout(timer);
     }
-    if (draft.state === "polling" && draft.uiStep === 6 && draft.docId) {
+    if (draft.state === "polling" && draft.uiStep === 7 && draft.docId) {
       const fetchOcr = async () => {
         try {
           const res = await fetch(`/api/documents/${draft.docId}/ocr`);
@@ -348,14 +390,14 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
 
   // Poll actual backend state
   useEffect(() => {
-    if (draft.state === "polling" && draft.actualStep < 6 && draft.docId) {
+    if (draft.state === "polling" && draft.actualStep < 7 && draft.docId) {
       const timer = setInterval(async () => {
         try {
           const res = await fetch(`/api/documents/${draft.docId}/status`);
           if (res.ok) {
             const data = await res.json();
             if (data.status !== "PROCESSING" || data.hasOcr) {
-              updateDraft(draft.id, { actualStep: 6 });
+              updateDraft(draft.id, { actualStep: 7 });
             }
           }
         } catch (e) {
@@ -392,11 +434,12 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
         ) : (
           <div className="space-y-3 mb-4">
             <PipelineItem label="File received" active={draft.uiStep >= 0} done={draft.uiStep >= 1} />
-            <PipelineItem label="SHA-256 calculated" active={draft.uiStep >= 1} done={draft.uiStep >= 2} />
-            <PipelineItem label="Evidence encrypted" active={draft.uiStep >= 2} done={draft.uiStep >= 3} />
-            <PipelineItem label="Integrity proof recorded" active={draft.uiStep >= 3} done={draft.uiStep >= 4} />
-            <PipelineItem label="OCR processing" active={draft.uiStep >= 4} done={draft.uiStep >= 5} />
-            <PipelineItem label="Metadata extraction" active={draft.uiStep >= 5} done={draft.uiStep >= 6} />
+            <PipelineItem label="Malware scan passed" active={draft.uiStep >= 1} done={draft.uiStep >= 2} />
+            <PipelineItem label="SHA-256 calculated" active={draft.uiStep >= 2} done={draft.uiStep >= 3} />
+            <PipelineItem label="Evidence encrypted" active={draft.uiStep >= 3} done={draft.uiStep >= 4} />
+            <PipelineItem label="Integrity proof recorded" active={draft.uiStep >= 4} done={draft.uiStep >= 5} />
+            <PipelineItem label="OCR processing" active={draft.uiStep >= 5} done={draft.uiStep >= 6} />
+            <PipelineItem label="Metadata extraction" active={draft.uiStep >= 6} done={draft.uiStep >= 7} />
             <PipelineItem 
               label={`Human review ${draft.state === "polling" ? "(Pending)" : (draft.state === "done" ? "(Done)" : "(In Progress)")}`}
               active={draft.state === "reviewing"} 
