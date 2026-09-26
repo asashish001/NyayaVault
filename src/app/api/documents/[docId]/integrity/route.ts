@@ -47,7 +47,6 @@ export async function GET(
     return NextResponse.json({ error: "Document version not found" }, { status: 404 });
   }
 
-  // Fetch from storage
   const storage = getStorage();
   let buffer: Buffer;
   try {

@@ -7,7 +7,6 @@ export async function FloatingAssistant() {
   const user = await getSessionUser();
   if (!user) return null;
 
-  // Fetch cases assigned to the user
   const assignments = await prisma.caseAssignment.findMany({
     where: { userId: user.id },
     include: { case: true },

@@ -52,13 +52,13 @@ export async function POST(
   }
 
   await prisma.$transaction(async (tx) => {
-    // 1. Update DB
+    // Lift the lock on the document so it can be managed by the normal retention cron again.
     await tx.document.update({
       where: { id: docId },
       data: { legalHold: false, retentionState: "HOLD_RELEASED" },
     });
 
-    // 2. Append to ledger
+    // The release of a legal hold is a high-stakes event that must be anchored in the immutable chain.
     await appendLedgerEvent({
       actorId: user.id,
       eventType: "LEGAL_HOLD_RELEASE",
@@ -68,7 +68,7 @@ export async function POST(
     });
   });
 
-  // 3. Audit log
+  // Maintain standard application-level auditing for the UI dashboard.
   await writeAudit({
     actorId: user.id,
     role: user.role,

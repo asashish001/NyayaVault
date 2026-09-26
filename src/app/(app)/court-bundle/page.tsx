@@ -8,7 +8,6 @@ export default async function CourtBundlePage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  // Fetch all cases the user is assigned to
   const assignments = await prisma.caseAssignment.findMany({
     where: { userId: user.id },
     include: {

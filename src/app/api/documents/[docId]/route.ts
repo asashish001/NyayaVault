@@ -48,7 +48,7 @@ export async function DELETE(
 
   const { docId } = await params;
 
-  // 1. Authorize archiving via ABAC single-source-of-truth
+  // Enforce zero-trust visibility: ensure the user has the 'archive' permission for this specific classification level and case.
   const authResult = await authorizeDocument({
     user,
     docId,

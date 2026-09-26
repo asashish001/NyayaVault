@@ -15,7 +15,6 @@ export default async function UploadPage(props: { searchParams: Promise<{ caseId
     whereClause.caseId = caseId;
   }
 
-  // Fetch cases assigned to the user
   const assignments = await prisma.caseAssignment.findMany({
     where: whereClause,
     include: { case: true },

@@ -34,7 +34,8 @@ export async function GET(
     return NextResponse.json({ error: "No OCR data found for this document" }, { status: 404 });
   }
 
-  // Parse the JSON string
+  // The OCR worker outputs a JSON string, but legacy or failed extractions might be malformed.
+  // We fall back to empty objects to prevent the UI from crashing when reading metadata.
   let extractedData;
   try {
     extractedData = JSON.parse(latestOcr.extractedData);

@@ -44,7 +44,6 @@ export default async function CaseCourtBundlePage({
 
   if (!authResult.ok) return notFound();
 
-  // Fetch audit logs related to this case
   const auditLogs = await prisma.auditLog.findMany({
     where: { caseId: caseRecord.id },
     orderBy: { createdAt: "asc" }

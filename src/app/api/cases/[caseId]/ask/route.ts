@@ -36,10 +36,10 @@ export async function POST(
   }
 
   try {
-    // 1. Embed the user's question
+    // Convert the user's plain text question into a vector for semantic comparison against case evidence.
     const queryEmbedding = await generateEmbedding(question);
 
-    // 2. Fetch all document chunks for this case
+    // Retrieve all document fragments bound to this case. We enforce ABAC boundary implicitly by scoping only to this caseId.
     // In production with pgvector this would be an exact nearest neighbor SQL query.
     // For MVP with SQLite, we do it in-memory.
     const chunks = await prisma.documentChunk.findMany({
@@ -55,7 +55,7 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // 3. Calculate cosine similarity
+    // Perform a mathematical comparison to find chunks that are semantically related to the question, even if keywords don't match.
     const scoredChunks = chunks.map(chunk => {
       let vec: number[];
       try {
@@ -69,11 +69,11 @@ export async function POST(
       };
     });
 
-    // 4. Sort and take top 5
+    // Limit the context window to the most relevant fragments to prevent overwhelming the local WebWorker LLM.
     scoredChunks.sort((a, b) => b.score - a.score);
     const topChunks = scoredChunks.slice(0, 5);
 
-    // 5. Wrap them in <context> tags
+    // Wrap the injected context in XML tags to help the LLM differentiate between the evidence and the user's prompt.
     let contextText = "";
     topChunks.forEach((c, idx) => {
       // Using a [doc-id:page] style citation format (we fake page for now as idx or document ID)

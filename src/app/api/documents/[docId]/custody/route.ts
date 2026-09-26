@@ -75,7 +75,7 @@ export async function POST(
 
   if (!authResult.ok) return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
 
-  // Cryptographically Verify Digital Signature from ESP Gateway
+  // We never trust the client's raw JSON for custody transfers. All metadata must be securely extracted from the signed ESP token to prevent tampering mid-flight.
   let payload;
   try {
     payload = await verifyEspSignature(signedToken);
@@ -83,7 +83,7 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Extract tamper-proof metadata from the signed token itself
+  // The payload contains the absolute source of truth for this transfer. 
   const { actorId, documentId, action, toDepartment, reason } = payload as any;
   const signatureRef = signedToken;
 
@@ -97,7 +97,7 @@ export async function POST(
     return NextResponse.json({ error: "Signature rejected: Token action does not match." }, { status: 403 });
   }
 
-  // Record Ledger Anchor for Custody Event (Rule R9)
+  // Custody changes legally bind a department to the physical evidence, so we must anchor it in the append-only ledger immediately.
   const ledgerEvent = await appendLedgerEvent({
     actorId: user.id,
     eventType: "CUSTODY_TRANSFER",

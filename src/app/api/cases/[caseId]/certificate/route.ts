@@ -30,7 +30,7 @@ export async function POST(
 
   if (!caseRecord) return NextResponse.json({ error: "Case not found" }, { status: 404 });
 
-  // 1. Build Certificate Content
+  // Generate the cryptographic payload required to satisfy Section 63 of the Bharatiya Sakshya Adhiniyam (BSA).
   const certificateContent = `
 NYAYAVAULT BSA-63 MASTER CERTIFICATE
 CASE NUMBER: ${caseRecord.caseNumber}
@@ -42,7 +42,7 @@ STATUS: DRAFT
 
   const certHash = computeSha256(Buffer.from(certificateContent, "utf-8"));
 
-  // 2. Write an audit row
+  // Provide transparency in the application dashboard that a legal certification was issued.
   await writeAudit({
     actorId: user.id,
     role: user.role,
@@ -54,7 +54,7 @@ STATUS: DRAFT
     reason: "Generated BSA Section 63 Draft Certificate",
   });
 
-  // 3. Store the certificate hash on the ledger
+  // Cryptographically anchor the certificate payload in the append-only ledger so it can be verified in court independently of the database.
   const ledgerTx = await appendLedgerEvent({
     actorId: user.id,
     eventType: "BSA_CERTIFICATE_DRAFT",

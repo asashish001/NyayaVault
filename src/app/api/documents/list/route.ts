@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
           ocrKeys = Object.keys(parsed.fields);
         }
       } catch (e) {
-        // ignore
       }
     }
 

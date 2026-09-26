@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  // 1. Get user's assigned cases (ABAC Enforcement)
+  // Enforce zero-trust visibility: users can only search across cases they are explicitly assigned to.
   const assignments = await prisma.caseAssignment.findMany({
     where: { userId: user.id },
     include: { case: true }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     })
     .map(a => a.caseId);
 
-  // 2. Perform Keyword Search across Metadata and OCR text
+  // Search across both structured metadata (title/status) and unstructured evidence (OCR text) simultaneously.
   const results = await prisma.document.findMany({
     where: {
       caseId: { in: caseIds },

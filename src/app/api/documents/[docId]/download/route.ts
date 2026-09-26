@@ -15,7 +15,7 @@ export async function GET(
 
   const { docId } = await params;
 
-  // 1. Fetch document and its latest version
+  // Ensure we are pulling the exact latest version anchored in the hash chain.
   const document = await prisma.document.findUnique({
     where: { id: docId },
     include: {
@@ -32,7 +32,7 @@ export async function GET(
 
   const purpose = request.nextUrl.searchParams.get("purpose") || undefined;
 
-  // 2. Check ABAC authorization (using 'view_document' action)
+  // Re-verify ABAC on every download request since assignments or classifications may have changed.
   const authResult = await authorizeDocument({
     user,
     docId,
@@ -50,7 +50,7 @@ export async function GET(
   const storageKey = latestVersion.storageKey;
 
   try {
-    // 3. Fetch and decrypt file from secure storage
+    // Retrieve bytes from the vault and attempt authenticated decryption using the document ID and version as Additional Authenticated Data (AAD).
     const storage = getStorage();
     const aad = `${document.id}|${latestVersion.version}`;
     let fileBuffer: Buffer;
@@ -61,7 +61,7 @@ export async function GET(
       fileBuffer = await storage.get(storageKey);
     }
     
-    // VERIFY INTEGRITY: Compute SHA-256 of decrypted buffer and compare to stored hash
+    // Critical: Verify cryptographic integrity post-decryption. If the hash doesn't match the ledger, the file has been tampered with or corrupted on disk.
     const crypto = require("crypto");
     const computedHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
     if (computedHash !== latestVersion.sha256Hash) {
@@ -79,7 +79,7 @@ export async function GET(
       return new NextResponse("File integrity verification failed. Document corrupted.", { status: 500 });
     }
 
-    // 4. Write an audit log for the download action
+    // Downloads of raw evidence files must be strictly audited for chain-of-custody tracking.
     await writeAudit({
       actorId: user.id,
       role: user.role,
@@ -92,7 +92,7 @@ export async function GET(
       reason: "Downloaded decrypted document file",
     });
 
-    // 5. Return the file as a downloadable attachment
+    // Force attachment mode to prevent the browser from inadvertently executing malicious scripts from uploaded evidence (e.g. HTML/SVG).
     return new NextResponse(fileBuffer as any, {
       status: 200,
       headers: {

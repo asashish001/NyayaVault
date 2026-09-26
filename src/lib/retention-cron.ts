@@ -44,7 +44,7 @@ export async function runRetentionPurge(dryRun: boolean = false, approver1?: str
       continue;
     }
 
-    // 1. If OCR data exists, anonymize the raw text to comply with DPDP
+    // We are legally required to redact PII from raw extractions after the retention period expires to comply with DPDP.
     for (const ocr of doc.ocrExtractions) {
       await prisma.ocrExtraction.update({
         where: { id: ocr.id },
@@ -55,7 +55,7 @@ export async function runRetentionPurge(dryRun: boolean = false, approver1?: str
       });
     }
 
-    // 2. Mark document retention state as PURGED
+    // Update the document's state to reflect its purged status so it is no longer served to the UI.
     await prisma.document.update({
       where: { id: doc.id },
       data: {
@@ -63,14 +63,14 @@ export async function runRetentionPurge(dryRun: boolean = false, approver1?: str
       }
     });
 
-    // 3. Append ledger event
+    // The act of purging a document must itself be recorded in the cryptographic ledger to maintain the complete lifecycle audit.
     await appendLedgerEvent({
       eventType: "PURGE",
       documentId: doc.id,
       metadata: { action: "DATA_MINIMIZATION", approvers: [approver1, approver2], version: doc.currentVersion }
     });
 
-    // 4. Log the system action in the audit log
+    // Leave a paper trail for the system administrator showing the automated background job executed successfully.
     await writeAudit({
       actorId: undefined, // System action
       role: "SYSTEM",

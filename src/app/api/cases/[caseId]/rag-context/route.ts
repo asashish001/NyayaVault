@@ -48,10 +48,10 @@ export async function POST(
   }
 
   try {
-    // 1. Embed the query
+    // Convert the user's plain text query into a vector for mathematical similarity comparison.
     const queryEmbedding = await generateEmbedding(query);
 
-    // 2. Fetch all chunks for documents in this case
+    // Retrieve all document fragments bound to this case to maintain strict ABAC isolation.
     // In a real app we'd use pgvector, but here we do in-memory cosine similarity
     const documents = await prisma.document.findMany({
       where: { caseId },
@@ -66,18 +66,18 @@ export async function POST(
       where: { documentId: { in: docIds } }
     });
 
-    // 3. Compute similarities
+    // Determine which chunks are most semantically related to the query, prioritizing conceptual matches over keyword matches.
     const scoredChunks = chunks.map(chunk => {
       const chunkEmbedding = JSON.parse(chunk.embedding);
       const score = cosineSimilarity(queryEmbedding, chunkEmbedding);
       return { ...chunk, score };
     });
 
-    // 4. Sort and take top 3
+    // Constrain the payload size to prevent overflowing the client's local WebWorker LLM token limit.
     scoredChunks.sort((a, b) => b.score - a.score);
     const topChunks = scoredChunks.slice(0, 3);
 
-    // 5. Format context with citations and redacting PII
+    // Inject strict citation metadata so the LLM is forced to cite its sources, minimizing hallucinations.
     const docMap = new Map(documents.map(d => [d.id, d]));
     
     const contextBlocks = topChunks.map(chunk => {

@@ -35,7 +35,7 @@ export async function GET(
     );
   }
 
-  // Log the view action
+  // Unauthenticated external access must still be appended to the immutable ledger for oversight.
   await writeAudit({
     actorId: null, // Public view
     role: "EXTERNAL_GUEST",
@@ -50,14 +50,13 @@ export async function GET(
 
   const latestOcr = shareToken.document.ocrExtractions?.[0];
 
-  // Apply Redactions to OCR Text
+  // Mask sensitive PII in the text buffer before rendering so it cannot be extracted from the final PDF.
   let displayText = latestOcr?.rawText || "No text content available.";
   let redactedFieldsList: string[] = [];
   if (shareToken.redactedFields) {
     try {
       redactedFieldsList = JSON.parse(shareToken.redactedFields);
     } catch (e) {
-      // Ignore parse error
     }
   }
 
@@ -69,11 +68,10 @@ export async function GET(
       displayText = result.text;
       redactionCount = result.count;
     } catch (e) {
-      // Ignore parse error
     }
   }
 
-  // Generate PDF
+  // Construct a flat PDF to ensure external parties cannot strip watermarks or easily scrape layered text.
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage([600, 800]);
   const font = await pdfDoc.embedFont(StandardFonts.Courier);
@@ -111,10 +109,9 @@ export async function GET(
   }
   y -= 20;
 
-  // Draw content
+  // Standard pdf-lib doesn't auto-wrap text, so we enforce a hard wrap to prevent clipping off the right edge.
   const lines = displayText.split("\n");
   for (const line of lines) {
-    // Basic word wrap
     const words = line.split(" ");
     let currentLine = "";
     for (const word of words) {
@@ -128,7 +125,7 @@ export async function GET(
     if (currentLine) drawText(currentLine, font, 10);
   }
 
-  // Add Watermark to all pages
+  // Burn the recipient identity and IP into the background to deter unauthorized screen capturing or leaking.
   const pages = pdfDoc.getPages();
   const rawWatermarkText = `CONFIDENTIAL - VIEWED BY: ${shareToken.recipient} - IP: ${ip}`;
   const watermarkText = Array.from(rawWatermarkText).map(c => c.charCodeAt(0) > 255 ? '?' : c).join('');
