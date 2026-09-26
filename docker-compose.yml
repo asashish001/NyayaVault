@@ -1,16 +1,5 @@
 version: '3.8'
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: nyayavault
-      POSTGRES_PASSWORD: nyayapassword
-      POSTGRES_DB: nyayavault
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   minio:
     image: quay.io/minio/minio:latest
     command: server /data --console-address ":9001"
@@ -30,5 +19,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
   minio_data:

@@ -36,7 +36,7 @@ export const env = {
   rateLimitRpm: Number(process.env.RATE_LIMIT_RPM ?? "120"),
   storageAdapter: process.env.STORAGE_ADAPTER ?? "filesystem",
   storageRoot: process.env.STORAGE_ROOT ?? "./storage/objects",
-  searchAdapter: process.env.SEARCH_ADAPTER ?? "postgres_fts",
+  searchAdapter: process.env.SEARCH_ADAPTER ?? "sqlite_fts",
   ledgerAdapter: process.env.LEDGER_ADAPTER ?? "hash_chain",
   espSecret: process.env.ESP_SECRET ?? "super-secure-national-esign-secret-key-2026",
   awsKmsKeyId: process.env.AWS_KMS_KEY_ID,

@@ -177,7 +177,7 @@ privacy/DPDP compliance for victim data (Women Safety Division context).
 | Gateway & Identity | WAF, API Gateway, OAuth2/OIDC, MFA, RBAC/ABAC engine, session service | AuthN/AuthZ before every sensitive action |
 | Core Services | Ingestion, malware scan, OCR/IDP, case-metadata service, workflow engine, search, audit, integrity, notification | Full case-document lifecycle |
 | AI/RAG Services | OCR, classifier, field extractor, vector index, controlled LLM service | Convert scans → searchable structured data; cited summaries |
-| Data Stores | Encrypted object storage, PostgreSQL, OpenSearch/vector DB, append-only audit store | Files, metadata, OCR text, indexes, events |
+| Data Stores | Encrypted object storage, SQLite, OpenSearch/vector DB, append-only audit store | Files, metadata, OCR text, indexes, events |
 | Proof Ledger | Permissioned blockchain or hash-chained ledger, Merkle batching | Anchor hashes/custody events only — never raw documents/PII |
 | Security Ops | KMS/HSM, secrets manager, SIEM, monitoring, backup/DR | Key protection, abuse detection, recovery, compliance evidence |
 
@@ -190,7 +190,7 @@ Users/Devices --MFA+RBAC/ABAC--> API Gateway+WAF
                                        v
                          OCR + Classification + Extraction
                                        |
-                    PostgreSQL <-------+-------> Search / Vector Index
+                        SQLite <-------+-------> Search / Vector Index
                                        |
                          Hash & Version Service --> Permissioned Ledger
                                        |
@@ -292,7 +292,7 @@ Use neutral, non-judgmental language. Do not infer guilt or innocence.
 |---|---|
 | Frontend | React/Next.js, role-aware UI, watermark overlay, audit/status indicators |
 | Backend | Node.js/Express or Django/FastAPI |
-| Database | PostgreSQL (metadata/relations) + S3-compatible object storage (documents) |
+| Database | SQLite (metadata/relations) + S3-compatible object storage (documents) |
 | Search | OpenSearch/Elasticsearch (full text) + vector index (pgvector/FAISS) for RAG |
 | OCR/IDP | Tesseract (+ layout model) or sovereign/commercial IDP; multilingual (English + 1 Indic language) |
 | Classification/Extraction | Rule-based + lightweight ML (logistic regression / small transformer) hybrid |
@@ -421,7 +421,7 @@ should end with something demoable.
 - [ ] Create `docs/IMPLEMENTATION_LOG.md` (see format in §5)
 - [ ] Create `README.md` with project scope, boundaries, and links to PRD/Design/Rules
 - [ ] Define API contracts for: auth, upload, document, search, share, custody, integrity, RAG (see `06_DATA_MODEL_AND_API.md`)
-- [ ] Set up Postgres schema (Case, Document, DocumentVersion, CustodyEvent, AuditLog, User, AccessPolicy, ShareToken)
+- [ ] Set up SQLite schema (Case, Document, DocumentVersion, CustodyEvent, AuditLog, User, AccessPolicy, ShareToken)
 - [ ] Set up object storage (S3-compatible, encrypted bucket)
 - [ ] Assign team ownership per DESIGN.md §Team Work Split
 

@@ -60,7 +60,7 @@ flowchart TB
 
 ## Runtime choice
 
-A **single Next.js process** keeps `npm run dev` simple. Storage, OCR, LLM, search, and ledger are **adapter interfaces** so Postgres, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
+A **single Next.js process** keeps `npm run dev` simple. Storage, OCR, LLM, search, and ledger are **adapter interfaces** so SQLite, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
 
 ## Data flow (Authentication and Access)
 
@@ -85,4 +85,4 @@ Upload → ClamAV malware/MIME/size validation → encrypt to object store → i
 
 ## Production path
 
-PostgreSQL + MinIO/S3 + TLS + KMS + real MFA + permissioned ledger adapter + official ICJS/CCTNS interfaces after authorization from NCRB/NIC.
+SQLite + MinIO/S3 + TLS + KMS + real MFA + permissioned ledger adapter + official ICJS/CCTNS interfaces after authorization from NCRB/NIC.
