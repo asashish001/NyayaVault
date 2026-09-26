@@ -47,6 +47,9 @@ npx prisma migrate dev --name phase1_init
 npm run db:seed
 node scripts/download-models.js
 npm test
+# (Optional) To enable the active malware scanning feature, start the ClamAV container:
+# (Note: You must have Docker Desktop running in the background for this command to work)
+# docker-compose up -d clamav
 npm run dev
 ```
 
