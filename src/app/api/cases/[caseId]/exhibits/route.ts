@@ -11,12 +11,12 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { caseId } = await params;
-  
+
   // Basic case access check
   const assignment = await prisma.caseAssignment.findUnique({
     where: { userId_caseId: { userId: user.id, caseId } },
   });
-  
+
   if (!assignment && user.role !== "ADMIN" && user.role !== "JUDGE_AUDITOR") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -46,13 +46,28 @@ export async function POST(
   const assignment = await prisma.caseAssignment.findUnique({
     where: { userId_caseId: { userId: user.id, caseId } },
   });
-  
+
   if (!assignment) {
     return NextResponse.json({ error: "Must be assigned to the case" }, { status: 403 });
   }
 
   const body = await request.json();
-  const { exhibitNumber, description, currentLocation, status } = body;
+  const {
+    exhibitNumber,
+    description,
+    currentLocation,
+    status,
+    category,
+    serialNumber,
+    identifyingMarks,
+    recoveryDate,
+    recoveryLocation,
+    recoveringOfficerId,
+    sourcePerson,
+    witnesses,
+    storageRequirements,
+    disposalEligibilityDate
+  } = body;
 
   if (!exhibitNumber || !description || !currentLocation) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -65,6 +80,16 @@ export async function POST(
       description,
       currentLocation,
       status: status || "IN_CUSTODY",
+      category: category || "OTHER",
+      serialNumber,
+      identifyingMarks,
+      recoveryDate: recoveryDate ? new Date(recoveryDate) : null,
+      recoveryLocation,
+      recoveringOfficerId,
+      sourcePerson,
+      witnesses,
+      storageRequirements,
+      disposalEligibilityDate: disposalEligibilityDate ? new Date(disposalEligibilityDate) : null,
     },
   });
 
