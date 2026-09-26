@@ -3,12 +3,19 @@ import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { CustodyDashboard } from "@/components/CustodyDashboard";
 
-export default async function CustodyPage() {
+export default async function CustodyPage(props: { searchParams: Promise<{ caseId?: string }> }) {
+  const searchParams = await props.searchParams;
+  const { caseId } = searchParams;
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
+  const whereClause: any = { userId: user.id };
+  if (caseId) {
+    whereClause.caseId = caseId;
+  }
+
   const assignments = await prisma.caseAssignment.findMany({
-    where: { userId: user.id },
+    where: whereClause,
     select: { caseId: true }
   });
 

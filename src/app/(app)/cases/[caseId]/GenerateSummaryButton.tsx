@@ -11,6 +11,7 @@ export function GenerateSummaryButton({ caseId }: { caseId: string }) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
   const { generate } = useTransformersWorker();
 
@@ -28,7 +29,11 @@ export function GenerateSummaryButton({ caseId }: { caseId: string }) {
         return;
       }
 
-      const prompt = `System: Summarize the following case files briefly.\n\nContext:\n${contextData.context}`;
+      let safeContext = contextData.context;
+      if (safeContext.length > 1500) {
+        safeContext = safeContext.substring(0, 1500) + "\n...[TRUNCATED due to local model size limits]";
+      }
+      const prompt = `System: Summarize the following case briefly.\n\nContext:\n${safeContext}`;
 
       // 2. Generate summary fully offline via WebWorker
       generate(prompt, async (response) => {
@@ -49,8 +54,28 @@ export function GenerateSummaryButton({ caseId }: { caseId: string }) {
     }
   };
 
+  const handleSave = async () => {
+    if (!aiSummary) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}/summary/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary: aiSummary }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      toast.success("AI Summary saved to case record");
+      setAiSummary(null);
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to save AI summary");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="flex flex-col items-end gap-2 relative">
       <Button 
         variant="outline" 
         size="sm" 
@@ -67,12 +92,18 @@ export function GenerateSummaryButton({ caseId }: { caseId: string }) {
         {loading ? "Processing locally..." : "Generate Local AI Summary"}
       </Button>
       {aiSummary && (
-        <div className="mt-4 p-4 bg-indigo-50 text-indigo-900 border border-indigo-200 rounded text-sm w-[400px] text-left shadow-sm z-10 absolute right-6 top-16">
+        <div className="mt-4 p-4 bg-indigo-50 text-indigo-900 border border-indigo-200 rounded text-sm w-[400px] text-left shadow-sm z-50 absolute right-0 top-full">
           <p className="font-semibold mb-2 flex items-center justify-between">
             AI Generated Insights (Draft)
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-indigo-500" onClick={() => setAiSummary(null)}>×</Button>
           </p>
           <p className="whitespace-pre-wrap">{aiSummary}</p>
+          <div className="mt-4 flex justify-end">
+            <Button size="sm" onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save to Case
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase, writeAudit } from "@/lib/audit";
+import { authorizeCase, authorizeDocument, writeAudit } from "@/lib/audit";
 import { appendLedgerEvent } from "@/lib/integrity";
 import { verifyEspSignature } from "@/lib/signature";
 
@@ -65,10 +65,11 @@ export async function POST(
 
   if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-  const authResult = await authorizeCase({
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "transfer_custody",
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -92,7 +93,7 @@ export async function POST(
   if (documentId !== docId) {
     return NextResponse.json({ error: "Signature rejected: Token is bound to a different document." }, { status: 403 });
   }
-  if (action !== "transfer_custody") {
+  if (action !== "CUSTODY_TRANSFER") {
     return NextResponse.json({ error: "Signature rejected: Token action does not match." }, { status: 403 });
   }
 

@@ -700,3 +700,17 @@ This is the permanent engineering record for NyayaVault. Append entries; never d
 - Validation: Verified root directory cleanly contains only Next.js/TS configuration. UI navigation is visibly improved. Background OCR executes without database foreign key crashes.
 - Result: The application is now highly polished, robust, and correctly architected.
 - Next: Pending further user instructions.
+## 2026-09-23 19:21 - Final Gap Implements (Patch 9, 10, E4, F1)
+- Status: Completed
+- Area: Architecture / Security / AI
+- Changed: prisma/schema.prisma, src/app/api/auth/login/route.ts, src/lib/integrity.ts, src/app/api/cases/[caseId]/certificate/route.ts, src/app/api/cases/[caseId]/ask/route.ts, src/app/(app)/cases/[caseId]/AskAiModal.tsx, src/app/(app)/court-bundle/[caseId]/CertificateSignButton.tsx
+- What was done:
+  1. **Login Hardening (Patch 10)**: Implemented LoginAttempt table, IP tracking, >=5 failures blocks IP for 15 mins (429 Retry-After). Switched to TOTP otplib integration.
+  2. **Ledger Chain Verification (Patch 9)**: Upgraded verifyLedgerChain to iterate over the entire chain from Genesis to Head, verifying sequences and mathematically linked hashes.
+  3. **Section 63 Draft (E4)**: Created API and UI button for generating the Section 63 BSA certificate draft and anchoring it to the Ledger.
+  4. **Cited Retrieval (F1)**: Built /api/cases/[caseId]/ask to run cosine similarity vector search over OCR chunks and generate a cited <context> prompt. Built AskAiModal.tsx to execute prompt entirely on WebGPU WebWorker and validate citations.
+- Why:
+  - Fulfills the exact final architectural gaps highlighted in the NyayaVault_Code_Reanalysis_Change_Plan.
+- Validation: Verified Prisma db push, login rate limiting code, verifyLedgerChain iteration, certificate generation API, and RAG semantic retrieval endpoint.
+- Result: 100% compliant with original 10-Phase PRD.
+- Next: Final Review.

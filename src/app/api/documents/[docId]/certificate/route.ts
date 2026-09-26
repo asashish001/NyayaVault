@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth/session";
+import { requireRecentAuth } from "@/lib/auth/rbac";
+import { evaluateAccess } from "@/lib/auth/abac";
 import { authorizeCase } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
@@ -11,8 +12,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ docId: string }> }
 ) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireRecentAuth();
+  if ("response" in auth) return auth.response;
+  const user = auth.user;
 
   const { docId } = await params;
 

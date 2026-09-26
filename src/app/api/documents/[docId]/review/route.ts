@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase, writeAudit } from "@/lib/audit";
+import { authorizeCase, authorizeDocument, writeAudit } from "@/lib/audit";
 
 export async function POST(
   request: NextRequest,
@@ -26,17 +26,20 @@ export async function POST(
 
   const document = await prisma.document.findUnique({
     where: { id: docId },
-    include: { ocrData: true }
+    include: { ocrExtractions: { take: 1, orderBy: { version: "desc" } } }
   });
 
-  if (!document || !document.ocrData) {
+  const latestOcr = document?.ocrExtractions?.[0];
+
+  if (!document || !latestOcr) {
     return NextResponse.json({ error: "Document or OCR data not found" }, { status: 404 });
   }
 
-  const authResult = await authorizeCase({
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "review_ocr", 
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -45,7 +48,7 @@ export async function POST(
   // Update extracted data
   let existingData;
   try {
-    existingData = JSON.parse(document.ocrData.extractedData);
+    existingData = JSON.parse(latestOcr.extractedData);
   } catch {
     existingData = { fields: {}, confidences: {} };
   }
@@ -64,8 +67,18 @@ export async function POST(
   });
 
   await prisma.$transaction(async (tx) => {
+    // Save history (C9 Fix)
+    await tx.ocrRevision.create({
+      data: {
+        ocrExtractionId: latestOcr.id,
+        previousData: latestOcr.extractedData,
+        updatedData: newExtractedData,
+        reviewedById: user.id,
+      }
+    });
+
     await tx.ocrExtraction.update({
-      where: { id: document.ocrData!.id },
+      where: { id: latestOcr.id },
       data: {
         extractedData: newExtractedData,
         status: "APPROVED",

@@ -43,7 +43,7 @@ export function IntegrityDashboard({ cases }: { cases: CaseGroup[] }) {
     setResult(null);
 
     try {
-      const res = await fetch(`/api/documents/${selectedDocId}/integrity`);
+      const res = await fetch(`/api/documents/${selectedDocId}/integrity?t=${Date.now()}`);
       const data = await res.json();
       setResult(data);
     } catch (err) {
@@ -65,9 +65,16 @@ export function IntegrityDashboard({ cases }: { cases: CaseGroup[] }) {
     
     setTampering(true);
     try {
-      await fetch(`/api/documents/${selectedDocId}/tamper`, { method: "POST" });
+      const res = await fetch(`/api/documents/${selectedDocId}/tamper`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.details || data.error || "Failed to tamper document");
+      }
       toast.warning("Document corrupted. Run verification again to see the result.");
       setResult(null);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Tamper failed: ${err.message}`);
     } finally {
       setTampering(false);
     }

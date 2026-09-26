@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Folder } from "lucide-react";
 
 type CaseInfo = {
@@ -13,6 +13,7 @@ type CaseInfo = {
 export function CaseSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [cases, setCases] = useState<CaseInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,9 +30,8 @@ export function CaseSwitcher() {
       });
   }, []);
 
-  // Determine current case selection based on URL if we are inside a specific case route
-  let currentCaseId = "";
-  if (pathname.startsWith("/cases/") && pathname.split("/").length > 2) {
+  let currentCaseId = searchParams.get("caseId") || "";
+  if (!currentCaseId && pathname.startsWith("/cases/") && pathname.split("/").length > 2) {
     currentCaseId = pathname.split("/")[2];
   }
 
@@ -45,7 +45,12 @@ export function CaseSwitcher() {
         value={currentCaseId}
         onChange={(e) => {
           const val = e.target.value;
-          if (val) {
+          const rootPath = pathname.split("/")[1];
+          const keepOnPagePaths = ["integrity", "upload", "custody", "audit", "share"];
+          
+          if (keepOnPagePaths.includes(rootPath)) {
+            router.push(`${pathname}${val ? `?caseId=${val}` : ''}`);
+          } else if (val) {
             router.push(`/cases/${val}`);
           } else {
             router.push(`/cases`);

@@ -4,9 +4,10 @@ import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase } from "@/lib/audit";
 import { getStorage } from "@/lib/storage";
 import { computeSha256, appendLedgerEvent } from "@/lib/integrity";
-import { validateUploadFile } from "@/lib/validators";
+import { validateUploadFile, clamAvScan } from "@/lib/validators";
 import { processDocumentOcr } from "@/lib/ocr";
 import crypto from "crypto";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -20,10 +21,26 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get("file") as File | null;
-  let caseId = formData.get("caseId") as string | null;
-  const title = formData.get("title") as string | null;
-  const docType = formData.get("docType") as string | null;
-  const existingDocId = formData.get("documentId") as string | null;
+  const UploadSchema = z.object({
+    caseId: z.string().min(1).max(100).optional(),
+    title: z.string().min(1).max(255).optional(),
+    docType: z.string().min(1).max(50).optional(),
+    documentId: z.string().optional(),
+  });
+
+  const parsed = UploadSchema.safeParse({
+    caseId: formData.get("caseId")?.toString() || undefined,
+    title: formData.get("title")?.toString() || undefined,
+    docType: formData.get("docType")?.toString() || undefined,
+    documentId: formData.get("documentId")?.toString() || undefined,
+  });
+
+  if (!parsed.success) {
+    console.error("Upload validation error:", parsed.error);
+    return NextResponse.json({ error: "Invalid input format" }, { status: 400 });
+  }
+
+  let { caseId, title, docType, documentId: existingDocId } = parsed.data;
 
   if (existingDocId) {
     const doc = await prisma.document.findUnique({ where: { id: existingDocId } });
@@ -38,8 +55,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file or caseId" }, { status: 400 });
   }
 
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
   // File validation (R11)
-  const validationError = validateUploadFile(file);
+  const validationError = validateUploadFile(file, buffer);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
@@ -55,8 +75,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
   }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  // Malware Scan
+  let scanResult: "CLEAN" | "FLAGGED" = "CLEAN";
+  try {
+    scanResult = await clamAvScan(buffer, file.name);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 503 });
+  }
+
+  if (scanResult === "FLAGGED") {
+    return NextResponse.json({ error: "Malware detected. Upload rejected." }, { status: 400 });
+  }
   
   // Compute SHA-256 Hash of original file (R9)
   const sha256Hash = computeSha256(buffer);
@@ -64,81 +93,108 @@ export async function POST(request: NextRequest) {
   // Determine storage key
   const storageKey = `doc_${crypto.randomBytes(16).toString("hex")}`;
   
-  let documentRecord: any;
+  let documentId: string;
   let versionNumber = 1;
   let prevVersionHash: string | null = null;
-
-  await prisma.$transaction(async (tx) => {
-    if (existingDocId) {
-      // New version of existing document
-      documentRecord = await tx.document.findUnique({ where: { id: existingDocId } });
-      if (!documentRecord) throw new Error("Document not found");
-      
-      versionNumber = documentRecord.currentVersion + 1;
-      
-      const prevVersion = await tx.documentVersion.findUnique({
-        where: { documentId_version: { documentId: documentRecord.id, version: documentRecord.currentVersion } }
-      });
-      prevVersionHash = prevVersion?.sha256Hash || null;
-
-      documentRecord = await tx.document.update({
-        where: { id: documentRecord.id },
-        data: { currentVersion: versionNumber, status: "PROCESSING" }
-      });
-    } else {
-      // New document
-      if (!docType || !title) throw new Error("Missing docType or title for new document");
-      documentRecord = await tx.document.create({
-        data: {
-          caseId,
-          title,
-          type: docType as any,
-          classification: authResult.case.classification, // inherit from case for demo
-          ownerDepartment: (user as any).department || "Unknown",
-          currentVersion: 1,
-          uploadedById: user.id,
-          status: "PROCESSING",
-        }
-      });
-    }
-
-    const versionRecord = await tx.documentVersion.create({
-      data: {
-        documentId: documentRecord.id,
-        version: versionNumber,
-        storageKey,
-        sha256Hash,
-        prevVersionHash,
-        mimeType: file.type,
-        byteSize: file.size,
-        originalName: file.name,
-      }
+  let classification: any = "CONFIDENTIAL";
+  let ownerDepartment: string = (user as any).department || "Unknown";
+  
+  if (existingDocId) {
+    const documentRecord = await prisma.document.findUnique({ where: { id: existingDocId } });
+    if (!documentRecord) throw new Error("Document not found");
+    
+    documentId = documentRecord.id;
+    versionNumber = documentRecord.currentVersion + 1;
+    
+    const prevVersion = await prisma.documentVersion.findUnique({
+      where: { documentId_version: { documentId: documentRecord.id, version: documentRecord.currentVersion } }
     });
-
-    // Write to ledger
-    const ledgerEvent = await appendLedgerEvent({
-      actorId: user.id,
-      eventType: "DOCUMENT_UPLOAD",
-      documentId: documentRecord.id,
-      versionId: versionRecord.id,
-      metadata: { fileName: file.name, hash: sha256Hash, size: file.size },
-      txClient: tx,
-    });
-
-    // Link ledger proof back to version
-    await tx.documentVersion.update({
-      where: { id: versionRecord.id },
-      data: { ledgerProofId: ledgerEvent.proofId }
-    });
-  });
-
-  if (!documentRecord) {
-    return NextResponse.json({ error: "Failed to create DB records" }, { status: 500 });
+    prevVersionHash = prevVersion?.sha256Hash || null;
+  } else {
+    documentId = crypto.randomUUID();
+    classification = authResult.case.classification;
   }
 
-  // Write file to encrypted storage adapter (R5)
-  const storage = getStorage();
-  await storage.put(storageKey, buffer, file.type);
+  let documentRecord: any;
+
+  try {
+    // Write file to encrypted storage adapter FIRST (Atomicity C3)
+    // Pass documentId|versionNumber as AAD (Cryptography D2)
+    const storage = getStorage();
+    const aad = `${documentId}|${versionNumber}`;
+    
+    try {
+      await storage.put(storageKey, buffer, file.type, aad);
+    } catch (storageError: any) {
+      console.error("Storage put failed:", storageError);
+      return NextResponse.json({ error: "Storage failure: " + storageError.message }, { status: 500 });
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        if (existingDocId) {
+          documentRecord = await tx.document.update({
+            where: { id: documentId },
+            data: { currentVersion: versionNumber, status: "PROCESSING" }
+          });
+        } else {
+          if (!docType || !title) throw new Error("Missing docType or title for new document");
+          documentRecord = await tx.document.create({
+            data: {
+              id: documentId,
+              caseId,
+              title,
+              type: docType as any,
+              classification,
+              ownerDepartment,
+              currentVersion: 1,
+              uploadedById: user.id,
+              status: "PROCESSING",
+            }
+          });
+        }
+
+        const versionRecord = await tx.documentVersion.create({
+          data: {
+            documentId: documentRecord.id,
+            version: versionNumber,
+            storageKey,
+            sha256Hash,
+            prevVersionHash,
+            scanStatus: scanResult,
+            mimeType: file.type,
+            byteSize: file.size,
+            originalName: file.name,
+          }
+        });
+
+        // Write to ledger (C8 Fix: Do not store plaintext PII filename on the ledger)
+        const fileNameHash = crypto.createHash("sha256").update(file.name).digest("hex");
+        const ledgerEvent = await appendLedgerEvent({
+          actorId: user.id,
+          eventType: "DOCUMENT_UPLOAD",
+          documentId: documentRecord.id,
+          versionId: versionRecord.id,
+          metadata: { fileNameHash, hash: sha256Hash, size: file.size },
+          txClient: tx,
+        });
+
+        // Link ledger proof back to version
+        await tx.documentVersion.update({
+          where: { id: versionRecord.id },
+          data: { ledgerProofId: ledgerEvent.proofId }
+        });
+      });
+    } catch (error: any) {
+      // DB Transaction failed, delete the orphaned file from storage
+      console.error("Upload DB transaction failed, deleting storage file", error);
+      await storage.delete(storageKey);
+      return NextResponse.json({ error: "Failed to create DB records: " + error.message }, { status: 500 });
+    }
+  } catch (outerError: any) {
+    console.error("Fatal upload error:", outerError);
+    return NextResponse.json({ error: "Internal server error: " + outerError.message }, { status: 500 });
+  }
 
   // OCR is now triggered explicitly by the client via POST /api/documents/[id]/process-ocr
 

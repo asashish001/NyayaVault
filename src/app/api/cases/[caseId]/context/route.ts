@@ -23,14 +23,29 @@ export async function GET(
     return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
   }
 
-  const docs = await prisma.document.findMany({
-    where: { caseId },
-    include: { ocrData: true }
+  const caseRecord = await prisma.caseRecord.findUnique({
+    where: { id: caseId },
+    include: {
+      documents: {
+        include: { ocrExtractions: { take: 1, orderBy: { version: "desc" } } }
+      }
+    }
   });
 
-  const contextBlocks = docs
-    .filter(d => d.ocrData?.rawText)
-    .map(d => `--- DOCUMENT [ID: ${d.id} | TITLE: ${d.title}] ---\n${d.ocrData!.rawText}`);
+  if (!caseRecord) {
+    return NextResponse.json({ error: "Case not found" }, { status: 404 });
+  }
 
-  return NextResponse.json({ context: contextBlocks.join("\n\n") });
+  let contextText = `--- CASE DETAILS ---\nTitle: ${caseRecord.title}\nCase Number: ${caseRecord.caseNumber}\nStatus: ${caseRecord.status}\nStation: ${caseRecord.station}\n\n`;
+
+  const docText = caseRecord.documents
+    .filter(d => d.ocrExtractions && d.ocrExtractions.length > 0 && d.ocrExtractions[0].rawText)
+    .map(d => `--- DOCUMENT [ID: ${d.id} | TITLE: ${d.title}] ---\n${d.ocrExtractions[0].rawText}`)
+    .join("\n\n");
+    
+  if (docText) {
+    contextText += docText;
+  }
+
+  return NextResponse.json({ context: contextText });
 }

@@ -24,9 +24,14 @@ export async function POST(
     return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
   }
 
-  await prisma.caseRecord.update({
-    where: { id: caseId },
-    data: { aiSummary: summary }
+  // Save the AI summary in the dedicated AiSummary table
+  // with a promptHash (omitted here for simplicity or can be generated) and UNVERIFIED status
+  await prisma.aiSummary.create({
+    data: {
+      caseId,
+      summary,
+      status: "UNVERIFIED"
+    }
   });
 
   return NextResponse.json({ success: true });

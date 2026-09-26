@@ -28,9 +28,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: decision.reason }, { status: 403 });
   }
 
+  const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
+  const limit = parseInt(request.nextUrl.searchParams.get("limit") || "50", 10);
+  const skip = (page - 1) * limit;
+
+  let whereClause: any = {};
+  if (auth.user.role === "SHO") {
+    // Lock SHO to their station's cases
+    whereClause.caseId = { not: null };
+    whereClause.case = {
+      station: auth.user.station,
+    };
+  } else if (auth.user.role !== "ADMIN") {
+    whereClause.case = {
+      assignments: {
+        some: { userId: auth.user.id }
+      }
+    };
+  }
+
   const logs = await prisma.auditLog.findMany({
+    where: whereClause,
     orderBy: { createdAt: "desc" },
-    take: 200,
+    skip,
+    take: limit,
     include: { actor: { select: { email: true, name: true } } },
   });
 

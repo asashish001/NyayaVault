@@ -4,7 +4,7 @@ import { pipeline, env } from '@huggingface/transformers';
 // The user will download the model to public/models/ for strict air-gap.
 // We set allowRemoteModels to true for prototype purposes so it downloads on first run,
 // but for production air-gap, it should be false.
-env.allowRemoteModels = false; 
+env.allowRemoteModels = true; // Must be true so fetch() works even for local HTTP server
 env.allowLocalModels = true;
 env.localModelPath = '/models/';
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { authorizeCase, writeAudit } from "@/lib/audit";
 import { verifyLedgerChain } from "@/lib/integrity";
+import { CertificateSignButton } from "./CertificateSignButton";
 
 export default async function CaseCourtBundlePage({
   params
@@ -20,8 +21,7 @@ export default async function CaseCourtBundlePage({
       documents: {
         include: {
           versions: {
-            orderBy: { version: "desc" },
-            take: 1
+            orderBy: { version: "desc" }
           },
           custodyEvents: {
             include: { actor: { select: { name: true, department: true } } },
@@ -50,17 +50,6 @@ export default async function CaseCourtBundlePage({
     orderBy: { createdAt: "asc" }
   });
 
-  await writeAudit({
-    actorId: user.id,
-    role: user.role,
-    action: "EXPORT",
-    result: "SUCCESS",
-    caseId: caseRecord.id,
-    ip: "local",
-    userAgent: "CaseCourtBundleGenerator",
-    reason: "Generated Case-Level Court Bundle.",
-  });
-
   const ledgerVerification = await verifyLedgerChain();
 
   const firDocs = caseRecord.documents.filter(d => d.type === "FIR");
@@ -78,7 +67,8 @@ export default async function CaseCourtBundlePage({
             <h2 className="font-bold text-navy">Master Court Bundle Preview</h2>
             <p className="text-sm text-slate-500">Review the case compilation before exporting.</p>
           </div>
-          <div className="space-x-4">
+          <div className="space-x-4 flex items-center">
+            <CertificateSignButton caseId={caseId} disabled={!ledgerVerification.valid} />
             <button 
               id="print-btn"
               className="px-4 py-2 bg-navy text-white rounded text-sm font-medium hover:bg-navy/90"
@@ -126,7 +116,7 @@ export default async function CaseCourtBundlePage({
                   <td className="p-2 text-center font-bold">{idx + 1}</td>
                   <td className="p-2">{doc.title}</td>
                   <td className="p-2">{doc.type}</td>
-                  <td className="p-2">{doc.createdAt.toLocaleDateString()}</td>
+                  <td className="p-2">{doc.createdAt.toLocaleDateString("en-IN")}</td>
                 </tr>
               ))}
             </tbody>
@@ -141,11 +131,14 @@ export default async function CaseCourtBundlePage({
           {firDocs.length === 0 ? <p className="text-sm italic text-slate-500">No documents in this category.</p> : firDocs.map(doc => (
             <div key={doc.id} className="mb-6 border-l-4 border-slate-300 pl-4 py-2">
               <h3 className="font-bold text-lg">{doc.title}</h3>
-              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString()}</p>
-              <div className="text-sm space-y-1">
-                <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{doc.versions[0]?.sha256Hash || "N/A"}</span></div>
-                <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{doc.versions[0]?.ledgerProofId || "N/A"}</span></div>
-              </div>
+              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString("en-IN")}</p>
+              {doc.versions.map((version, vIdx) => (
+                <div key={version.id} className="text-sm space-y-1 mb-2">
+                  <div className="font-semibold italic">Version {doc.versions.length - vIdx}</div>
+                  <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{version.sha256Hash || "N/A"}</span></div>
+                  <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{version.ledgerProofId || "N/A"}</span></div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -156,11 +149,14 @@ export default async function CaseCourtBundlePage({
           {witnessDocs.length === 0 ? <p className="text-sm italic text-slate-500">No documents in this category.</p> : witnessDocs.map(doc => (
             <div key={doc.id} className="mb-6 border-l-4 border-slate-300 pl-4 py-2">
               <h3 className="font-bold text-lg">{doc.title}</h3>
-              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString()}</p>
-              <div className="text-sm space-y-1">
-                <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{doc.versions[0]?.sha256Hash || "N/A"}</span></div>
-                <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{doc.versions[0]?.ledgerProofId || "N/A"}</span></div>
-              </div>
+              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString("en-IN")}</p>
+              {doc.versions.map((version, vIdx) => (
+                <div key={version.id} className="text-sm space-y-1 mb-2">
+                  <div className="font-semibold italic">Version {doc.versions.length - vIdx}</div>
+                  <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{version.sha256Hash || "N/A"}</span></div>
+                  <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{version.ledgerProofId || "N/A"}</span></div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -171,11 +167,14 @@ export default async function CaseCourtBundlePage({
           {forensicDocs.length === 0 ? <p className="text-sm italic text-slate-500">No documents in this category.</p> : forensicDocs.map(doc => (
             <div key={doc.id} className="mb-6 border-l-4 border-slate-300 pl-4 py-2">
               <h3 className="font-bold text-lg">{doc.title}</h3>
-              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString()}</p>
-              <div className="text-sm space-y-1">
-                <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{doc.versions[0]?.sha256Hash || "N/A"}</span></div>
-                <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{doc.versions[0]?.ledgerProofId || "N/A"}</span></div>
-              </div>
+              <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString("en-IN")}</p>
+              {doc.versions.map((version, vIdx) => (
+                <div key={version.id} className="text-sm space-y-1 mb-2">
+                  <div className="font-semibold italic">Version {doc.versions.length - vIdx}</div>
+                  <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{version.sha256Hash || "N/A"}</span></div>
+                  <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{version.ledgerProofId || "N/A"}</span></div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -187,11 +186,14 @@ export default async function CaseCourtBundlePage({
             {otherDocs.map(doc => (
               <div key={doc.id} className="mb-6 border-l-4 border-slate-300 pl-4 py-2">
                 <h3 className="font-bold text-lg">{doc.title} ({doc.type})</h3>
-                <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString()}</p>
-                <div className="text-sm space-y-1">
-                  <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{doc.versions[0]?.sha256Hash || "N/A"}</span></div>
-                  <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{doc.versions[0]?.ledgerProofId || "N/A"}</span></div>
-                </div>
+                <p className="text-xs text-slate-500 mb-2">Uploaded on: {doc.createdAt.toLocaleString("en-IN")}</p>
+                {doc.versions.map((version, vIdx) => (
+                  <div key={version.id} className="text-sm space-y-1 mb-2">
+                    <div className="font-semibold italic">Version {doc.versions.length - vIdx}</div>
+                    <div><span className="font-semibold">SHA-256 Hash:</span> <span className="font-mono text-xs">{version.sha256Hash || "N/A"}</span></div>
+                    <div><span className="font-semibold">Ledger Proof:</span> <span className="font-mono text-xs">{version.ledgerProofId || "N/A"}</span></div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -225,13 +227,13 @@ export default async function CaseCourtBundlePage({
               </tr>
             </thead>
             <tbody>
-              {caseRecord.documents.map((doc) => (
-                <tr key={doc.id} className="border-b border-slate-200">
-                  <td className="p-2 font-sans font-bold">{doc.title}</td>
-                  <td className="p-2">{doc.versions[0]?.sha256Hash || "N/A"}</td>
+              {caseRecord.documents.flatMap((doc) => doc.versions.map((v, i) => (
+                <tr key={v.id} className="border-b border-slate-200">
+                  <td className="p-2 font-sans font-bold">{doc.title} {doc.versions.length > 1 ? `(v${doc.versions.length - i})` : ''}</td>
+                  <td className="p-2">{v.sha256Hash || "N/A"}</td>
                   <td className="p-2">{doc.anchorStatus}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
           <div className="flex justify-between mt-12 pt-8 border-t border-slate-300">
@@ -272,7 +274,7 @@ export default async function CaseCourtBundlePage({
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
                 .map((evt) => (
                 <tr key={evt.id} className="border-b border-slate-200">
-                  <td className="p-2 font-mono text-xs">{evt.createdAt.toLocaleString()}</td>
+                  <td className="p-2 font-mono text-xs">{evt.createdAt.toLocaleString("en-IN")}</td>
                   <td className="p-2 font-bold">{evt.docTitle}</td>
                   <td className="p-2">{evt.actor.name} ({evt.actor.department})</td>
                   <td className="p-2">{evt.toDepartment}</td>
@@ -304,11 +306,11 @@ export default async function CaseCourtBundlePage({
             <tbody>
               {auditLogs.map((log) => (
                 <tr key={log.id} className="border-b border-slate-200">
-                  <td className="p-2">{log.createdAt.toLocaleString()}</td>
+                  <td className="p-2">{log.createdAt.toLocaleString("en-IN")}</td>
                   <td className="p-2 font-bold">{log.action}</td>
                   <td className="p-2">{log.role}</td>
                   <td className={`p-2 ${log.result === 'SUCCESS' ? 'text-green-600' : 'text-red-600'}`}>{log.result}</td>
-                  <td className="p-2">{log.ip}</td>
+                  <td className="p-2">{log.ip ? log.ip.replace(/(\d+)\.\d+$/, "$1.***") : "unknown"}</td>
                 </tr>
               ))}
             </tbody>
@@ -325,7 +327,12 @@ export default async function CaseCourtBundlePage({
       {/* Script for printing via the button */}
       <script dangerouslySetInnerHTML={{
         __html: `
-          document.getElementById('print-btn').addEventListener('click', function() {
+          document.getElementById('print-btn').addEventListener('click', async function() {
+            try {
+              await fetch('/api/cases/${caseRecord.id}/export-bundle-audit', { method: 'POST' });
+            } catch (e) {
+              console.error(e);
+            }
             window.print();
           });
         `

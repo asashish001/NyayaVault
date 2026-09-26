@@ -9,9 +9,7 @@ export function useTransformersWorker() {
   useEffect(() => {
     // Create the worker only once on the client side
     if (!worker.current && typeof window !== 'undefined') {
-      worker.current = new Worker(new URL('./worker.ts', import.meta.url), {
-        type: 'module',
-      });
+      worker.current = new Worker(new URL('./worker.ts', import.meta.url));
 
       worker.current.addEventListener('message', (event) => {
         const { id, type, payload } = event.data;

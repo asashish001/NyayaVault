@@ -43,6 +43,7 @@ export async function authorizeCase(options: {
   action: AccessAction;
   ip?: string | null;
   userAgent?: string | null;
+  purpose?: string;
 }) {
   const record = await prisma.caseRecord.findUnique({
     where: { id: options.caseId },
@@ -69,6 +70,7 @@ export async function authorizeCase(options: {
     assigned,
     caseClassification: record.classification,
     action: options.action,
+    purpose: options.purpose,
   });
 
   await writeAudit({
@@ -88,4 +90,64 @@ export async function authorizeCase(options: {
   }
 
   return { ok: true as const, status: 200 as const, reason: decision.reason, case: record };
+}
+
+export async function authorizeDocument(options: {
+  user: SessionUser;
+  docId: string;
+  action: AccessAction;
+  ip?: string | null;
+  userAgent?: string | null;
+  purpose?: string;
+}) {
+  const document = await prisma.document.findUnique({
+    where: { id: options.docId },
+    include: {
+      case: {
+        include: { assignments: true },
+      },
+    },
+  });
+
+  if (!document) {
+    await writeAudit({
+      actorId: options.user.id,
+      role: options.user.role,
+      action: "ACCESS_DENIED",
+      result: "DENIED",
+      documentId: options.docId,
+      ip: options.ip,
+      userAgent: options.userAgent,
+      reason: "Document not found",
+    });
+    return { ok: false as const, status: 404 as const, reason: "Document not found", document: null };
+  }
+
+  const assigned = document.case.assignments.some((row) => row.userId === options.user.id);
+  const decision = evaluateAccess({
+    role: options.user.role as Role,
+    assigned,
+    caseClassification: document.case.classification,
+    action: options.action,
+    purpose: options.purpose,
+  });
+
+  await writeAudit({
+    actorId: options.user.id,
+    role: options.user.role,
+    action: decision.allowed ? "ACCESS_ALLOWED" : "ACCESS_DENIED",
+    result: decision.allowed ? "SUCCESS" : "DENIED",
+    caseId: document.case.id,
+    documentId: document.id,
+    ip: options.ip,
+    userAgent: options.userAgent,
+    reason: decision.reason,
+    metadata: { action: options.action, documentType: document.type },
+  });
+
+  if (!decision.allowed) {
+    return { ok: false as const, status: 403 as const, reason: decision.reason, document };
+  }
+
+  return { ok: true as const, status: 200 as const, reason: decision.reason, document };
 }

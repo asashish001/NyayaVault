@@ -5,6 +5,8 @@ import { authorizeCase, writeAudit } from "@/lib/audit";
 import { getStorage } from "@/lib/storage";
 import { computeSha256, verifyLedgerChain } from "@/lib/integrity";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ docId: string }> }
@@ -27,6 +29,7 @@ export async function GET(
     user,
     caseId: document.caseId,
     action: "view_document",
+    purpose: "Cryptographic Integrity Verification",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -48,7 +51,12 @@ export async function GET(
   const storage = getStorage();
   let buffer: Buffer;
   try {
-    buffer = await storage.get(versionRecord.storageKey);
+    const aad = `${docId}|${targetVersion}`;
+    try {
+      buffer = await storage.get(versionRecord.storageKey, aad);
+    } catch (e) {
+      buffer = await storage.get(versionRecord.storageKey);
+    }
   } catch (error) {
     // If decryption fails due to tampering (e.g. invalid AES padding), we catch it here.
     await writeAudit({

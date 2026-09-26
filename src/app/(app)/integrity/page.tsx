@@ -4,12 +4,19 @@ import { getSessionUser } from "@/lib/auth/session";
 import { evaluateAccess } from "@/lib/auth/abac";
 import { IntegrityDashboard } from "@/components/IntegrityDashboard";
 
-export default async function IntegrityPage() {
+export default async function IntegrityPage(props: { searchParams: Promise<{ caseId?: string }> }) {
+  const searchParams = await props.searchParams;
+  const { caseId } = searchParams;
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
+  const whereClause: any = { userId: user.id };
+  if (caseId) {
+    whereClause.caseId = caseId;
+  }
+
   const assignments = await prisma.caseAssignment.findMany({
-    where: { userId: user.id },
+    where: whereClause,
     include: { 
       case: {
         include: {
@@ -29,6 +36,7 @@ export default async function IntegrityPage() {
         assigned: true,
         caseClassification: row.case.classification,
         action: "view_document",
+        purpose: "Cryptographic Integrity Verification",
       }).allowed && row.case.documents.length > 0
     )
     .map((row) => ({

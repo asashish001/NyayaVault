@@ -4,13 +4,20 @@ import { getSessionUser } from "@/lib/auth/session";
 import { evaluateAccess } from "@/lib/auth/abac";
 import { UploadForm } from "@/components/UploadForm";
 
-export default async function UploadPage() {
+export default async function UploadPage(props: { searchParams: Promise<{ caseId?: string }> }) {
+  const searchParams = await props.searchParams;
+  const { caseId } = searchParams;
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
+  const whereClause: any = { userId: user.id };
+  if (caseId) {
+    whereClause.caseId = caseId;
+  }
+
   // Fetch cases assigned to the user
   const assignments = await prisma.caseAssignment.findMany({
-    where: { userId: user.id },
+    where: whereClause,
     include: { case: true },
   });
 

@@ -1,12 +1,8 @@
 import { promises as fs } from "fs";
 import path from "path";
-import crypto from "crypto";
 import { StorageAdapter } from "./types";
 import { env } from "@/lib/env";
-
-const ALGO = "aes-256-gcm";
-// Must be 32 bytes hex encoded in env
-const KEY = Buffer.from(env.encryptionKey, "hex");
+import { kms } from "@/lib/kms";
 
 export class FilesystemStorageAdapter implements StorageAdapter {
   private rootDir: string;
@@ -19,21 +15,15 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     await fs.mkdir(this.rootDir, { recursive: true });
   }
 
-  async put(key: string, buffer: Buffer, mimeType: string) {
+  async put(key: string, buffer: Buffer, mimeType: string, aad?: string) {
     await this.ensureDir();
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(ALGO, KEY, iv);
-    const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-    
-    // Store IV (16) + AuthTag (16) + encrypted data
-    const finalData = Buffer.concat([iv, authTag, encrypted]);
+    const encryptedData = await kms.encrypt(buffer, aad);
     const filePath = path.join(this.rootDir, key);
-    await fs.writeFile(filePath, finalData);
+    await fs.writeFile(filePath, encryptedData);
 
     return {
       key,
-      byteLength: finalData.length
+      byteLength: encryptedData.length
     };
   }
 
@@ -46,19 +36,18 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     }
   }
 
-  async get(key: string): Promise<Buffer> {
+  async get(key: string, aad?: string): Promise<Buffer> {
     const filePath = path.join(this.rootDir, key);
     const fileData = await fs.readFile(filePath);
+    return kms.decrypt(fileData, aad);
+  }
 
-    // Extract IV (first 16 bytes), AuthTag (next 16 bytes), and encrypted data
-    const iv = fileData.subarray(0, 16);
-    const authTag = fileData.subarray(16, 32);
-    const encrypted = fileData.subarray(32);
-
-    const decipher = crypto.createDecipheriv(ALGO, KEY, iv);
-    decipher.setAuthTag(authTag);
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-
-    return decrypted;
+  async delete(key: string): Promise<void> {
+    try {
+      const filePath = path.join(this.rootDir, key);
+      await fs.unlink(filePath);
+    } catch {
+      // Ignore if it doesn't exist
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase, writeAudit } from "@/lib/audit";
+import { authorizeDocument, writeAudit, clientIp } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -11,31 +11,30 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { docId } = await params;
-  const document = await prisma.document.findUnique({
-    where: { id: docId },
-    include: {
-      versions: {
-        where: { version: undefined }, // We'll just fetch the latest version below
-        orderBy: { version: "desc" },
-        take: 1
-      }
-    }
-  });
-
-  if (!document) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 });
-  }
-
-  const authResult = await authorizeCase({
+  const purpose = request.nextUrl.searchParams.get("purpose") || undefined;
+  
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "view_document",
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
+    purpose,
   });
 
   if (!authResult.ok) {
     return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
   }
+
+  const document = await prisma.document.findUnique({
+    where: { id: docId },
+    include: {
+      versions: {
+        orderBy: { version: "desc" },
+        take: 1
+      }
+    }
+  });
 
   return NextResponse.json({ document });
 }
@@ -49,24 +48,22 @@ export async function DELETE(
 
   const { docId } = await params;
 
+  // 1. Authorize archiving via ABAC single-source-of-truth
+  const authResult = await authorizeDocument({
+    user,
+    docId,
+    action: "archive",
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
+    userAgent: request.headers.get("user-agent"),
+  });
+
+  if (!authResult.ok) return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
+
   const document = await prisma.document.findUnique({
     where: { id: docId }
   });
 
   if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
-
-  if (user.role !== "ADMIN" && user.role !== "JUDGE_AUDITOR") {
-    return NextResponse.json({ error: "Insufficient privileges" }, { status: 403 });
-  }
-
-  const authResult = await authorizeCase({
-    user,
-    caseId: document.caseId,
-    action: "archive",
-    userAgent: request.headers.get("user-agent"),
-  });
-
-  if (!authResult.ok) return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
 
   // Legal Hold Check
   if (document.legalHold) {

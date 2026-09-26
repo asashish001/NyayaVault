@@ -10,12 +10,14 @@ export function ReviewForm({
   docId, 
   initialData,
   rawText,
+  isApproved,
   onSuccess,
   onCancel
 }: { 
   docId: string;
   initialData: string;
   rawText?: string;
+  isApproved?: boolean;
   onSuccess?: () => void;
   onCancel?: () => void;
 }) {
@@ -133,8 +135,8 @@ export function ReviewForm({
                       />
                     ) : (
                       <span 
-                        className={`block cursor-pointer font-medium p-1 -ml-1 rounded hover:bg-slate-100 transition-colors ${!value ? 'text-slate-400 italic' : 'text-slate-800'}`}
-                        onClick={() => setEditingField(key)}
+                        className={`block ${!isApproved ? 'cursor-pointer hover:bg-slate-100' : ''} font-medium p-1 -ml-1 rounded transition-colors ${!value ? 'text-slate-400 italic' : 'text-slate-800'}`}
+                        onClick={() => { if (!isApproved) setEditingField(key); }}
                       >
                         {Array.isArray(value) ? value.join(", ") : (value || "—")}
                       </span>
@@ -146,7 +148,9 @@ export function ReviewForm({
                     </span>
                   </td>
                   <td className="px-5 py-4 text-right w-1/6">
-                    {isEditing ? (
+                    {isApproved ? (
+                      <CheckCircle2 className="h-4 w-4 ml-auto text-green-600" />
+                    ) : isEditing ? (
                       <Button size="sm" variant="ghost" onClick={() => setEditingField(null)} className="h-8 text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50">Save</Button>
                     ) : (
                       <Button 
@@ -169,10 +173,10 @@ export function ReviewForm({
 
     <div className="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-6">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel} disabled={busy} className="h-11 px-8 font-bold shadow-sm">Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={busy || isApproved} className="h-11 px-8 font-bold shadow-sm">Cancel</Button>
         )}
-        <Button onClick={handleApprove} disabled={busy} className="h-11 px-8 font-bold bg-[#0F294D] hover:bg-[#0F294D]/90 text-white shadow-md transition-all">
-          {busy ? "Approving..." : "Approve & Index Data"}
+        <Button onClick={handleApprove} disabled={busy || isApproved} className={`h-11 px-8 font-bold ${isApproved ? 'bg-green-600 hover:bg-green-700' : 'bg-[#0F294D] hover:bg-[#0F294D]/90'} text-white shadow-md transition-all`}>
+          {isApproved ? "Approved & Indexed" : (busy ? "Approving..." : "Approve & Index Data")}
         </Button>
       </div>
     </div>

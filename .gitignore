@@ -21,14 +21,16 @@
 env
 
 # prisma / local db
+*.db
+*.db-journal
 prisma/*.db
 prisma/*.db-journal
 prisma/dev.db
 prisma/test.db
+dev.db
 
 # storage (encrypted blobs)
-/storage/objects/
-/storage/tmp/
+/storage/
 
 # logs / debug
 npm-debug.log*

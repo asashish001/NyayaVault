@@ -23,6 +23,9 @@ export type DocumentDraft = {
   ocrData?: string;
   rawText?: string;
   errorMessage?: string;
+  isAnalyzingType?: boolean;
+  reviewedById?: string | null;
+  docStatus?: string;
 };
 
 export function UploadForm({ cases }: { cases: CaseOption[] }) {
@@ -39,17 +42,66 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
     if (!e.target.files) return;
     const newFiles = Array.from(e.target.files);
     
-    const newDrafts = newFiles.map(file => ({
-      id: Math.random().toString(36).substring(7),
-      file,
-      title: file.name.replace(/\.[^/.]+$/, ""), // strip extension for default title
-      docType: "FIR",
-      state: "idle" as PipelineState,
-      uiStep: 0,
-      actualStep: 0,
-    }));
+    const newDrafts = newFiles.map(file => {
+      const title = file.name.replace(/\.[^/.]+$/, "");
+      const lowerName = file.name.toLowerCase();
+      let docType = "FIR";
+      
+      if (lowerName.includes("forensic")) docType = "FORENSIC_REPORT";
+      else if (lowerName.includes("witness") || lowerName.includes("statement")) docType = "WITNESS_STATEMENT";
+      else if (lowerName.includes("charge") && lowerName.includes("sheet")) docType = "CHARGE_SHEET";
+      else if (lowerName.includes("police") && lowerName.includes("report")) docType = "POLICE_REPORT";
+      else if (lowerName.includes("notice")) docType = "NOTICE";
+      else if (lowerName.includes("judgment")) docType = "JUDGMENT";
+      else if (lowerName.includes("complaint")) docType = "COMPLAINT";
+      else if (lowerName.includes("medical")) docType = "MEDICAL_REPORT";
+      else if (lowerName.includes("closure")) docType = "CLOSURE_REPORT";
+      else if (lowerName.includes("seizure") || lowerName.includes("panchnama")) docType = "SEIZURE_MEMO_PANCHNAMA";
+      else if (lowerName.includes("bail")) docType = "BAIL_ORDER";
+      else if (lowerName.includes("confession")) docType = "CONFESSION_STATEMENT";
+      
+      return {
+        id: Math.random().toString(36).substring(7),
+        file,
+        title,
+        docType,
+        state: "idle" as PipelineState,
+        uiStep: 0,
+        actualStep: 0,
+        isAnalyzingType: true, // Start analyzing immediately
+      };
+    });
     
     setDrafts(prev => [...prev, ...newDrafts]);
+    
+    // Asynchronously call the API for each draft to auto-categorize based on file contents
+    newDrafts.forEach(async (draft) => {
+      try {
+        const formData = new FormData();
+        formData.append("file", draft.file);
+        
+        const res = await fetch("/api/documents/suggest-type", {
+          method: "POST",
+          body: formData,
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.suggestedType && data.suggestedType !== "UNKNOWN") {
+            updateDraft(draft.id, { 
+              docType: data.suggestedType,
+              isAnalyzingType: false 
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to analyze doc type", err);
+      }
+      // If failed or returned unknown, clear flag
+      updateDraft(draft.id, { isAnalyzingType: false });
+    });
+
     // Reset file input
     e.target.value = "";
   }
@@ -159,14 +211,14 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
               <div className="max-h-[400px] overflow-y-auto space-y-3 pr-2">
                 {drafts.map((draft) => (
                   <div key={draft.id} className="flex flex-col sm:flex-row gap-3 p-4 border border-slate-200 rounded-lg bg-slate-50/50 items-start sm:items-center relative group">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <button 
+                      type="button"
                       onClick={() => removeDraft(draft.id)}
-                      className="absolute top-2 right-2 h-6 w-6 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      className="absolute top-2 right-2 h-7 w-7 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-colors shadow-sm bg-white border border-slate-200 hover:border-red-500 z-10"
+                      title="Remove file"
                     >
                       <X className="h-4 w-4" />
-                    </Button>
+                    </button>
                     
                     <div className="w-full sm:w-1/2 pr-6">
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Title</label>
@@ -181,19 +233,37 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
                     </div>
                     
                     <div className="w-full sm:w-1/2">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Document Type</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-500">Document Type</label>
+                        {draft.isAnalyzingType && (
+                          <span className="text-[10px] text-blue-600 font-bold flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Analyzing...
+                          </span>
+                        )}
+                      </div>
                       <select 
                         value={draft.docType} 
                         onChange={e => updateDraft(draft.id, { docType: e.target.value })}
-                        className="w-full text-sm p-2 border border-slate-200 rounded bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        disabled={draft.isAnalyzingType}
+                        className={`w-full text-sm p-2 border border-slate-200 rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none ${draft.isAnalyzingType ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white'}`}
                       >
                         <option value="FIR">FIR</option>
-                        <option value="WITNESS_STATEMENT">Witness Statement</option>
-                        <option value="FORENSIC_REPORT">Forensic Report</option>
-                        <option value="CHARGE_SHEET">Charge Sheet</option>
                         <option value="POLICE_REPORT">Police Report</option>
+                        <option value="WITNESS_STATEMENT">Witness Statement</option>
+                        <option value="CHARGE_SHEET">Charge Sheet</option>
+                        <option value="FORENSIC_REPORT">Forensic Report</option>
                         <option value="EVIDENCE_RECORD">Evidence Record</option>
                         <option value="COURT_FILING">Court Filing</option>
+                        <option value="NOTICE">Notice</option>
+                        <option value="JUDGMENT">Judgment</option>
+                        <option value="COMPLAINT">Complaint</option>
+                        <option value="ARREST_MEMO">Arrest Memo</option>
+                        <option value="SEIZURE_MEMO_PANCHNAMA">Seizure Memo / Panchnama</option>
+                        <option value="MEDICAL_REPORT">Medical Report</option>
+                        <option value="CONFESSION_STATEMENT">Confession Statement</option>
+                        <option value="REMAND_APPLICATION">Remand Application</option>
+                        <option value="BAIL_ORDER">Bail Order</option>
+                        <option value="CLOSURE_REPORT">Closure Report</option>
                         <option value="OTHER">Other</option>
                       </select>
                     </div>
@@ -239,6 +309,7 @@ export function UploadForm({ cases }: { cases: CaseOption[] }) {
 
 // Sub-component to manage individual file pipelines independently
 function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updateDraft: (id: string, updates: Partial<DocumentDraft>) => void }) {
+  console.log("Rendering DocumentProcessor, state:", draft.state);
   
   // Catch up uiStep to actualStep smoothly
   useEffect(() => {
@@ -257,13 +328,16 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
             updateDraft(draft.id, {
               ocrData: JSON.stringify(data.extractedData || {}),
               rawText: data.rawText || "",
-              state: "reviewing"
+              state: data.status === "APPROVED" ? "done" : "reviewing",
+              docStatus: data.status,
+              reviewedById: data.reviewedById
             });
           } else {
-            updateDraft(draft.id, { state: "done" });
+            const errText = await res.text();
+            updateDraft(draft.id, { state: "done", rawText: `OCR API failed: ${res.status} ${errText}` });
           }
-        } catch (e) {
-          updateDraft(draft.id, { state: "done" });
+        } catch (e: any) {
+          updateDraft(draft.id, { state: "done", rawText: `OCR Fetch failed: ${e.message}` });
         }
       };
       fetchOcr();
@@ -301,7 +375,11 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
             <FileCheck className="h-5 w-5 opacity-70" />
             {draft.title} <span className="font-normal text-xs opacity-70">({draft.docType})</span>
           </CardTitle>
-          {draft.state === "done" && <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">APPROVED</span>}
+          {draft.state === "done" && (
+            <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">
+              {draft.reviewedById ? "APPROVED" : "AUTO-APPROVED (> 60% Confidence)"}
+            </span>
+          )}
           {draft.state === "error" && <span className="text-xs font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">FAILED</span>}
         </div>
       </CardHeader>
@@ -326,15 +404,17 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
             />
           </div>
         )}
-        
-        {draft.state === "reviewing" && draft.docId && (
+        {(draft.state === "reviewing" || (draft.state === "done" && !draft.reviewedById)) && draft.docId && (
           <div className="mt-6 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
-            <h3 className="text-sm font-bold text-navy mb-4 uppercase tracking-wider">Review Extraction</h3>
+            <h3 className="text-sm font-bold text-navy mb-4 uppercase tracking-wider">
+              {draft.state === "done" ? "Extraction Results" : "Review Extraction"}
+            </h3>
             <ReviewForm 
               docId={draft.docId} 
               initialData={draft.ocrData || "{}"} 
               rawText={draft.rawText}
-              onSuccess={() => updateDraft(draft.id, { state: "done" })} 
+              isApproved={draft.state === "done"}
+              onSuccess={() => updateDraft(draft.id, { state: "done", reviewedById: "manual" })} 
             />
           </div>
         )}

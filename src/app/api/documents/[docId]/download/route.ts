@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase, writeAudit } from "@/lib/audit";
+import { authorizeCase, authorizeDocument, writeAudit } from "@/lib/audit";
 import { getStorage } from "@/lib/storage";
 
 export async function GET(
@@ -30,12 +30,16 @@ export async function GET(
     return new NextResponse("Document not found", { status: 404 });
   }
 
+  const purpose = request.nextUrl.searchParams.get("purpose") || undefined;
+
   // 2. Check ABAC authorization (using 'view_document' action)
-  const authResult = await authorizeCase({
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "view_document",
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
+    purpose,
   });
 
   if (!authResult.ok) {
@@ -48,7 +52,32 @@ export async function GET(
   try {
     // 3. Fetch and decrypt file from secure storage
     const storage = getStorage();
-    const fileBuffer = await storage.get(storageKey);
+    const aad = `${document.id}|${latestVersion.version}`;
+    let fileBuffer: Buffer;
+    try {
+      fileBuffer = await storage.get(storageKey, aad);
+    } catch (e: any) {
+      // Fallback for files encrypted before AAD enforcement
+      fileBuffer = await storage.get(storageKey);
+    }
+    
+    // VERIFY INTEGRITY: Compute SHA-256 of decrypted buffer and compare to stored hash
+    const crypto = require("crypto");
+    const computedHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+    if (computedHash !== latestVersion.sha256Hash) {
+      await writeAudit({
+        actorId: user.id,
+        role: user.role,
+        action: "DOWNLOAD",
+        result: "ERROR",
+        caseId: document.caseId,
+        documentId: document.id,
+        ip: request.headers.get("x-forwarded-for") || "local",
+        userAgent: request.headers.get("user-agent") || "Browser",
+        reason: "Integrity verification failed during download. File corrupted or tampered.",
+      });
+      return new NextResponse("File integrity verification failed. Document corrupted.", { status: 500 });
+    }
 
     // 4. Write an audit log for the download action
     await writeAudit({
@@ -70,6 +99,7 @@ export async function GET(
         "Content-Type": latestVersion.mimeType,
         "Content-Disposition": `attachment; filename="${latestVersion.originalName}"`,
         "Content-Length": fileBuffer.length.toString(),
+        "X-Content-Type-Options": "nosniff" // C5: security header
       },
     });
   } catch (error) {

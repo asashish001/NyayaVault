@@ -42,13 +42,42 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, secret());
+    
+    const response = NextResponse.next();
+    
+    // Sliding session: if the token is older than 5 minutes, issue a fresh one
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+    const iat = payload.iat || 0;
+    
+    if (nowInSeconds - iat > 5 * 60) {
+      const { SignJWT } = await import("jose");
+      const newToken = await new SignJWT({
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+        jti: payload.jti as string | undefined,
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setSubject(payload.sub!)
+        .setIssuedAt()
+        .setExpirationTime("30m")
+        .sign(secret());
+        
+      response.cookies.set(SESSION_COOKIE, newToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 30 * 60, // 30 minutes in seconds
+      });
+    }
+
+    return response;
   } catch {
     const login = new URL("/login", request.url);
     return NextResponse.redirect(login);
   }
-
-  return NextResponse.next();
 }
 
 export const config = {

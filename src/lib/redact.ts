@@ -12,13 +12,25 @@ export function redact(text: string, extracted: any, keys: string[], extraTerms:
   let n = 0; 
   const fields = extracted?.fields ?? {};
   
-  const terms = [...keys.flatMap(k => {
+  const baseTerms = [...keys.flatMap(k => {
       const val = fields[k];
       if (Array.isArray(val)) return val;
       if (val) return [val];
       return [];
     }), ...extraTerms]
     .filter((v): v is string => typeof v === "string" && v.trim().length > 2);
+
+  const expandedTerms = new Set<string>();
+  for (const t of baseTerms) {
+    expandedTerms.add(t);
+    if (t.includes(' ')) {
+      t.split(/\s+/).forEach(word => {
+        if (word.length > 3) expandedTerms.add(word);
+      });
+    }
+  }
+
+  const terms = Array.from(expandedTerms).sort((a, b) => b.length - a.length);
   
   for (const t of terms) {
     text = text.replace(new RegExp(esc(t), "gi"), () => {

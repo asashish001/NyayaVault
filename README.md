@@ -11,7 +11,7 @@ All people, stations, FIR numbers, and facts in the demo are **fictional**.
 
 Most core features (identity, RBAC/ABAC, audit, upload, ledger UI, sharing, OCR, AI assistant, and court bundle export) are implemented and functional.
 
-See [`Docs/IMPLEMENTATION_LOG.md`](Docs/IMPLEMENTATION_LOG.md) for the living engineering record.
+See `Docs/archive/IMPLEMENTATION_LOG_PHASE_0_TO_10.md` for the historical engineering record.
 
 ## 🛑 Important Notes Before Cloning
 
@@ -45,6 +45,7 @@ copy .env.example .env
 npm install
 npx prisma migrate dev --name phase1_init
 npm run db:seed
+node scripts/download-models.js
 npm test
 npm run dev
 ```
@@ -63,6 +64,8 @@ SQLite file: `prisma/dev.db`. Production path: change `DATABASE_URL` to PostgreS
 Password for every account: `demo1234!`  
 Demo MFA OTP: `000000`
 
+> **Note:** The shared demo password, fixed OTP (`000000`), and presentation role switcher are demo conveniences gated by `.env` flags (e.g., `DEMO_OTP`, `DEMO_ROLE_SWITCH`). They must be disabled in production. e-Sign signatures in the court bundle are simulated using HS256 JWT; production requires a CCA-licensed DSC or Aadhaar eSign.
+
 | Role | Email | Assignment |
 |---|---|---|
 | Investigating Officer | `io.mehra@nyayavault.demo` | WS-2026-0001 |
@@ -79,7 +82,7 @@ Use the unassigned IO and the dashboard “Attempt restricted case” link to sh
 
 - **App:** Next.js App Router (UI + route handlers)
 - **DB:** Prisma + SQLite (Postgres-ready schema)
-- **Auth:** HttpOnly JWT cookie (Strict 30-min CJIS Timeout), demo MFA OTP, presentation role switcher (audited)
+- **Auth:** HttpOnly JWT cookie (Sliding idle timeout + 8h absolute cap), demo MFA OTP, presentation role switcher (audited)
 - **AuthZ:** RBAC + case assignment + 5-Tier Classification ABAC on **server** routes and server-rendered pages
 - **Audit:** append-only `AuditLog` rows for login, allow, and deny
 - **Adapters:** filesystem storage, hash-chain ledger, local WebGPU AI models
@@ -116,12 +119,13 @@ See `.env.example`. Copy it to `.env` before your first run. No external API key
 - Mock adapters must not be described as live government integrations.
 - **CERT-In Compliance (NTP Sync):** To comply with CERT-In directions for accurate audit logging and incident reporting, the host OS running this application must be configured to synchronize its clock with the Network Time Protocol (NTP) servers of the National Informatics Centre (NIC) or National Physical Laboratory (NPL). Ensure your deployment environments are configured to sync with `samay1.nic.in`, `samay2.nic.in`, or NPL's `time.nplindia.in`.
 
-## Limitations
+## Known Limitations (Out of Scope for MVP)
 
-- No real malware engine; the virus scanning status in the UI is currently simulated.
-- No live CCTNS/ICJS/e-Courts calls; responses are mocked.
-- AI features are currently limited to basic document summarization and extraction (Proof of Concept). We do **not** provide "100% cited retrieval" or deep vector RAG against the entire case corpus in this version.
-- AES-256 at rest currently uses a local filesystem storage adapter, not a remote KMS-backed bucket.
+- **Production Integration**: No live CCTNS/ICJS/e-Courts API integration; responses are strictly mocked for demo purposes.
+- **Digital Signatures**: e-Sign signatures and approvals are simulated using HS256 JWTs; production requires real Class-3 DSC/eSign PKI onboarding.
+- **Advanced Forensics**: No handwritten text recognition (HTR) or deepfake/advanced forgery detection (requires dedicated ML pipelines).
+- **Blockchain**: Ledger is a tamper-evident hash chain stored locally; it is not a public, multi-validator production blockchain network.
+- **Enterprise Operations**: Full SIEM/SOC deployment and multi-language support (beyond English + 1 Indic language) are not included in the MVP.
 
 ## License
 

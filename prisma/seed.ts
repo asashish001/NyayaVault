@@ -11,14 +11,19 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.shareToken.deleteMany();
   await prisma.ledgerEvent.deleteMany();
-  await prisma.documentVersion.deleteMany();
+  await prisma.ocrRevision.deleteMany();
   await prisma.ocrExtraction.deleteMany();
+  await prisma.documentVersion.deleteMany();
   await prisma.documentChunk.deleteMany();
   await prisma.custodyEvent.deleteMany();
   await prisma.document.deleteMany();
+  await prisma.aiSummary.deleteMany();
+  await prisma.physicalExhibit.deleteMany();
   await prisma.caseAssignment.deleteMany();
   await prisma.accessPolicy.deleteMany();
   await prisma.caseRecord.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.loginAttempt.deleteMany();
   await prisma.user.deleteMany();
 
   const io = await prisma.user.create({

@@ -90,6 +90,7 @@ export type AccessInput = {
   assigned: boolean;
   caseClassification: Classification;
   action: AccessAction;
+  purpose?: string;
 };
 
 export type AccessDecision = {
@@ -119,6 +120,19 @@ export function evaluateAccess(input: AccessInput): AccessDecision {
       allowed: false,
       reason: `Classification ${input.caseClassification} exceeds clearance for ${input.role}`,
     };
+  }
+
+  // Strict purpose check for high classification (B6 Fix)
+  if (
+    (input.action === "view_document" || input.action === "export") &&
+    CLASSIFICATION_RANK[input.caseClassification] >= CLASSIFICATION_RANK["RESTRICTED"]
+  ) {
+    if (!input.purpose || input.purpose.trim() === "") {
+      return {
+        allowed: false,
+        reason: `A mandatory purpose statement is required to access ${input.caseClassification} documents.`,
+      };
+    }
   }
 
   return { allowed: true, reason: "Authorized" };

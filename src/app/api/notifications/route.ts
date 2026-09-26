@@ -88,11 +88,16 @@ export async function GET() {
     });
   }
 
-  // 4. Legal Holds (Visible to all)
+  // 4. Legal Holds (Visible to assigned cases unless ADMIN)
   const newHolds = await prisma.document.findMany({
     where: {
       legalHold: true,
-      createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+      createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
+      case: user.role !== "ADMIN" && user.role !== "JUDGE_AUDITOR" ? {
+        assignments: {
+          some: { userId: user.id }
+        }
+      } : undefined
     },
     orderBy: { createdAt: "desc" },
     take: 3

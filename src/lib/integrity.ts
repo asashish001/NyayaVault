@@ -5,6 +5,9 @@ export function computeSha256(buffer: Buffer): string {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
+// Global lock for ledger serialization
+let ledgerLock = Promise.resolve<any>(null);
+
 export async function appendLedgerEvent(params: {
   actorId?: string;
   eventType: string;
@@ -22,7 +25,21 @@ export async function appendLedgerEvent(params: {
     const prevHash = lastEvent ? lastEvent.eventHash : "GENESIS";
     
     const timestamp = new Date();
-    const metadataJson = JSON.stringify(params.metadata || {});
+    
+    // Hash sensitive metadata to prevent leakage in ledger
+    const safeMetadata: Record<string, any> = {};
+    if (params.metadata) {
+      for (const [key, value] of Object.entries(params.metadata)) {
+        if (key === "hash") {
+          safeMetadata[key] = value;
+        } else if (typeof value === "string" && (value.includes("ey") || value.length > 50)) {
+          safeMetadata[key] = computeSha256(Buffer.from(value, "utf-8"));
+        } else {
+          safeMetadata[key] = value;
+        }
+      }
+    }
+    const metadataJson = JSON.stringify(safeMetadata);
     
     const eventString = [
       sequence.toString(),
@@ -54,14 +71,25 @@ export async function appendLedgerEvent(params: {
     });
   };
 
-  if (params.txClient) {
-    return execute(params.txClient);
-  } else {
-    return prisma.$transaction(execute);
-  }
+  // Serialize execution to prevent race conditions on sequence generation
+  return new Promise<any>((resolve, reject) => {
+    ledgerLock = ledgerLock.then(async () => {
+      try {
+        let result;
+        if (params.txClient) {
+          result = await execute(params.txClient);
+        } else {
+          result = await prisma.$transaction(execute);
+        }
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
 }
 
-export async function verifyLedgerChain(): Promise<{ valid: boolean; error?: string }> {
+export async function verifyLedgerChain(): Promise<{ valid: boolean; error?: string; count?: number; head?: string }> {
   const events = await prisma.ledgerEvent.findMany({
     orderBy: { sequence: "asc" },
   });
@@ -98,5 +126,5 @@ export async function verifyLedgerChain(): Promise<{ valid: boolean; error?: str
     expectedSequence++;
   }
 
-  return { valid: true };
+  return { valid: true, count: events.length, head: expectedPrevHash };
 }

@@ -4,9 +4,11 @@ import { prisma } from "@/lib/db";
 import { env, loginSchema } from "@/lib/env";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { writeAudit, clientIp } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
-  const ip = clientIp(request.headers);
+  try {
+    const ip = clientIp(request.headers);
   const userAgent = request.headers.get("user-agent");
 
   let body: unknown;
@@ -30,9 +32,33 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, password, otp } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  // Anti-bruteforce: Check DB for failures
+  const recentFailures = await prisma.loginAttempt.count({
+    where: {
+      ip,
+      success: false,
+      timestamp: { gte: new Date(Date.now() - 15 * 60 * 1000) }
+    }
+  });
 
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (recentFailures >= 5) {
+    return new NextResponse(
+      JSON.stringify({ error: "Too many attempts, please try again later" }), 
+      { status: 429, headers: { "Retry-After": "900", "Content-Type": "application/json" } }
+    );
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  
+  // Dummy hash to mitigate timing attacks for unknown users
+  const dummyHash = "$2a$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW";
+  const isValidPassword = await bcrypt.compare(password, user ? user.passwordHash : dummyHash);
+
+  if (!user || !isValidPassword) {
+    await prisma.loginAttempt.create({
+      data: { email: email.toLowerCase(), ip, success: false }
+    });
+    
     await writeAudit({
       actorId: user?.id,
       role: user?.role ?? "ANONYMOUS",
@@ -49,10 +75,20 @@ export async function POST(request: NextRequest) {
     if (!otp) {
       return NextResponse.json({
         mfaRequired: true,
-        message: "Enter the demo OTP to complete login.",
       });
     }
-    if (otp !== env.demoOtp) {
+    
+    let isTotpValid = false;
+    if (user.totpSecret) {
+      const { authenticator } = require("otplib");
+      isTotpValid = authenticator.verify({ token: otp, secret: user.totpSecret });
+    }
+    
+    // Fallback to DEMO_OTP if no specific TOTP secret exists (for pre-seeded demo accounts)
+    if (otp !== env.demoOtp && !isTotpValid) {
+      await prisma.loginAttempt.create({
+        data: { email: email.toLowerCase(), ip, success: false }
+      });
       await writeAudit({
         actorId: user.id,
         role: user.role,
@@ -65,6 +101,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
     }
   }
+
+  await prisma.loginAttempt.create({
+    data: { email: email.toLowerCase(), ip, success: true }
+  });
 
   const token = await createSessionToken({
     id: user.id,
@@ -94,4 +134,8 @@ export async function POST(request: NextRequest) {
       department: user.department,
     },
   });
+  } catch (error: any) {
+    console.error("LOGIN ROUTE CRASHED:", error);
+    return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
+  }
 }

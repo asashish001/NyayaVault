@@ -45,13 +45,22 @@ export function DocumentActions({ docId }: { docId: string }) {
       >
         Section 63 Cert
       </a>
-      <a 
-        href={`/api/documents/${docId}/download`} 
-        target="_blank"
+      <button 
+        onClick={(e) => {
+          e.preventDefault();
+          const purpose = prompt("Enter purpose for access (Required for RESTRICTED and PROTECTED files):");
+          if (purpose !== null) {
+            let url = `/api/documents/${docId}/download`;
+            if (purpose.trim()) {
+              url += `?purpose=${encodeURIComponent(purpose.trim())}`;
+            }
+            window.open(url, "_blank");
+          }
+        }}
         className="rounded bg-slate-100 px-2 py-1 text-xs font-medium hover:bg-slate-200"
       >
         Download
-      </a>
+      </button>
       <button 
         onClick={handleDelete}
         disabled={loading}

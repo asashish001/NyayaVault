@@ -55,7 +55,10 @@ function SearchContent() {
       setLoading(true);
       setHasSearched(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(qParam.trim())}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(qParam.trim())}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" }
+        });
         const data = await res.json();
         if (isMounted) setResults(data.results || []);
       } catch (err) {

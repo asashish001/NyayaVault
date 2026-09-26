@@ -6,8 +6,10 @@ import { authorizeCase } from "@/lib/audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GenerateSummaryButton } from "./GenerateSummaryButton";
+import { ApproveSummaryButton } from "./ApproveSummaryButton";
 import { DocumentActions } from "@/components/DocumentActions";
 import { formatClassification } from "@/lib/utils/format";
+import { PhysicalExhibitsList } from "@/components/PhysicalExhibitsList";
 
 export default async function CaseDetailPage({
   params,
@@ -47,12 +49,20 @@ export default async function CaseDetailPage({
   const record = result.case;
   
   const documents = await prisma.document.findMany({
+    where: { 
+      caseId: record.id,
+      ownerDepartment: user.department || undefined
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const latestAiSummary = await prisma.aiSummary.findFirst({
     where: { caseId: record.id },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Fictional case</p>
@@ -89,23 +99,31 @@ export default async function CaseDetailPage({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Summary (Official)</CardTitle>
-          <GenerateSummaryButton caseId={caseId} />
+          <div className="flex items-center gap-2">
+            <GenerateSummaryButton caseId={caseId} />
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-slate-700">{record.summary}</p>
         </CardContent>
       </Card>
       
-      {record.aiSummary && (
+      {latestAiSummary && latestAiSummary.status === "UNVERIFIED" && (
         <Card className="border-indigo-200 bg-indigo-50/30">
           <CardHeader className="pb-2">
-            <CardTitle className="text-indigo-900 flex items-center gap-2">
-              <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">AI GENERATED</span>
-              AI Case Analysis
+            <CardTitle className="text-indigo-900 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">AI GENERATED</span>
+                AI Case Analysis
+                {latestAiSummary.status === "UNVERIFIED" && <span className="text-xs font-normal opacity-70 ml-2">(Unverified)</span>}
+              </div>
+              {latestAiSummary.status === "UNVERIFIED" && (
+                <ApproveSummaryButton caseId={caseId} summaryId={latestAiSummary.id} />
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-indigo-900/80 italic">{record.aiSummary}</p>
+            <p className="text-sm leading-relaxed text-indigo-900/80 italic">{latestAiSummary.summary}</p>
           </CardContent>
         </Card>
       )}
@@ -139,6 +157,8 @@ export default async function CaseDetailPage({
           )}
         </CardContent>
       </Card>
+      
+      <PhysicalExhibitsList caseId={caseId} />
     </div>
   );
 }

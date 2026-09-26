@@ -180,6 +180,9 @@ export function AppShell({
         <div className="flex items-center gap-6 pr-6">
           {/* Active Case / Workspace Badge */}
           {user.role !== "ADMIN" && <CaseSwitcher />}
+          
+          {/* Global AI Assistant */}
+          {floatingAssistant}
 
           <div className="relative" ref={notifRef}>
             <button 
@@ -302,8 +305,6 @@ export function AppShell({
           {children}
         </div>
       </main>
-
-      {floatingAssistant}
     </div>
   );
 }

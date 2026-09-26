@@ -1,10 +1,9 @@
 import * as jose from 'jose';
+import { env } from './env';
 
 // In a real production setup, the App would verify using the ESP's Public Key (RS256).
 // For this simulation, we use symmetric HS256 to represent the ESP gateway's signature.
-const ESP_SECRET = new TextEncoder().encode(
-  'super-secure-national-esign-secret-key-2026'
-);
+const ESP_SECRET = new TextEncoder().encode(env.espSecret);
 
 /**
  * Generates a cryptographically signed JWT representing an X.509 e-Sign certificate.
@@ -17,6 +16,23 @@ export async function generateEspSignature(
   toDepartment: string,
   reason: string
 ): Promise<string> {
+  const esignProviderUrl = process.env.ESIGN_PROVIDER_URL;
+
+  if (esignProviderUrl) {
+    // External API Request simulating eMudhra / Aadhaar eSign
+    try {
+      const res = await fetch(`${esignProviderUrl}/v1/esign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId, documentId, action, toDepartment, reason })
+      });
+      const data = await res.json();
+      if (data.signature) return data.signature;
+    } catch (e) {
+      console.error("[eSign Integration] External provider failed, falling back to simulated JWT.", e);
+    }
+  }
+
   const jwt = await new jose.SignJWT({ actorId, documentId, action, toDepartment, reason })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -5,16 +5,16 @@ let adapterInstance: StorageAdapter | null = null;
 
 export function getStorage(): StorageAdapter {
   if (!adapterInstance) {
-    // Easily extensible for AWS S3, MinIO, etc. based on storageAdapterName
-    if (storageAdapterName === "filesystem") {
-      adapterInstance = new FilesystemStorageAdapter();
+    // Easily extensible for AWS S3, MinIO, etc. based on STORAGE_ADAPTER env var
+    if (process.env.STORAGE_ADAPTER === "s3") {
+      const { S3StorageAdapter } = require("./s3");
+      adapterInstance = new S3StorageAdapter();
     } else {
-      // Fallback to filesystem for demo if unknown
+      // Fallback to filesystem
       adapterInstance = new FilesystemStorageAdapter();
     }
   }
-  
-  return adapterInstance;
+  return adapterInstance!;
 }
 
 export * from "./types";

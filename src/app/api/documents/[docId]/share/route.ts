@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase, writeAudit } from "@/lib/audit";
+import { authorizeCase, authorizeDocument, writeAudit } from "@/lib/audit";
 import crypto from "crypto";
 
 export async function POST(
@@ -31,18 +31,24 @@ export async function POST(
 
   if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-  const authResult = await authorizeCase({
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "share",
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
   });
 
   if (!authResult.ok) return NextResponse.json({ error: authResult.reason }, { status: authResult.status });
 
+  const hours = parseInt(expiryHours);
+  if (isNaN(hours) || hours <= 0 || hours > 72) {
+    return NextResponse.json({ error: "Invalid expiry. Must be between 1 and 72 hours." }, { status: 400 });
+  }
+
   // Generate secure random token
   const token = crypto.randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + parseInt(expiryHours) * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
 
   const shareToken = await prisma.shareToken.create({
     data: {

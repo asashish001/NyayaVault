@@ -33,12 +33,13 @@ export const env = {
   encryptionKey,
   demoOtp: process.env.DEMO_OTP ?? "000000",
   demoRoleSwitch: !isProd && (process.env.DEMO_ROLE_SWITCH ?? "false") === "true",
-  llmMode: (process.env.LLM_MODE ?? "mock") as "mock" | "live",
   rateLimitRpm: Number(process.env.RATE_LIMIT_RPM ?? "120"),
   storageAdapter: process.env.STORAGE_ADAPTER ?? "filesystem",
   storageRoot: process.env.STORAGE_ROOT ?? "./storage/objects",
-  searchAdapter: process.env.SEARCH_ADAPTER ?? "sqlite_fts",
+  searchAdapter: process.env.SEARCH_ADAPTER ?? "postgres_fts",
   ledgerAdapter: process.env.LEDGER_ADAPTER ?? "hash_chain",
+  espSecret: process.env.ESP_SECRET ?? "super-secure-national-esign-secret-key-2026",
+  awsKmsKeyId: process.env.AWS_KMS_KEY_ID,
 };
 
 export const loginSchema = z.object({

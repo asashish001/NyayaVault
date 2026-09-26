@@ -167,10 +167,11 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                       className="w-full text-sm p-2 border border-slate-200 rounded focus:border-navy outline-none"
                     >
                       <option value="" disabled>Select receiving department...</option>
-                      <option value="Forensic Lab">Forensic Lab</option>
-                      <option value="Prosecution Directorate">Prosecution Directorate</option>
-                      <option value="District Court">District Court</option>
-                      <option value="Investigating Agency">Investigating Agency</option>
+                      <option value="e-Forensics Mock Lab">e-Forensics Mock Lab</option>
+                      <option value="e-Prosecution Mock Cell">e-Prosecution Mock Cell</option>
+                      <option value="Oversight / Court Record (Demo)">District Court (Oversight)</option>
+                      <option value="Women Safety Cell (Demo)">Women Safety Cell (IO)</option>
+                      <option value="Station House (Demo)">Station House (SHO)</option>
                     </select>
                   </div>
                   
@@ -215,7 +216,7 @@ export function CustodyDashboard({ documents, currentDept }: { documents: DocInf
                       <span className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-navy border-2 border-white ring-2 ring-slate-100" />
                       
                       <div className="text-xs text-slate-500 mb-1">
-                        {new Date(evt.createdAt).toLocaleString()}
+                        {new Date(evt.createdAt).toLocaleString("en-IN")}
                       </div>
                       <div className="font-medium text-sm text-slate-900">
                         Transferred to {evt.toDepartment}

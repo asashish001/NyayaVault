@@ -1,6 +1,6 @@
 # NyayaVault architecture
 
-Prototype for . Complementary document-integrity layer — **not** a replacement for ICJS, CCTNS, e-Courts, e-Sakshya, e-Prosecution, or e-Forensics.
+Prototype for Smart India Hackathon. Complementary document-integrity layer — **not** a replacement for ICJS, CCTNS, e-Courts, e-Sakshya, e-Prosecution, or e-Forensics.
 
 ## Component diagram
 
@@ -22,10 +22,10 @@ flowchart TB
   subgraph core [Server modules]
     ABAC[RBAC + case ABAC]
     AUDIT[Append-only audit]
-    HASH[SHA-256 / versions - Phase 2]
-    LEDGER[Hash-chain ledger - Phase 3]
-    OCR[OCR adapter - Phase 4]
-    AI[Local AI Assistant - Phase 6]
+    HASH[SHA-256 / versions]
+    LEDGER[Hash-chain ledger]
+    OCR[OCR Background Worker]
+    AI[In-browser AI Worker]
   end
 
   subgraph data [Data]
@@ -60,9 +60,9 @@ flowchart TB
 
 ## Runtime choice
 
-A **single Next.js process** keeps `npm run dev` simple for the . Storage, OCR, LLM, search, and ledger are **adapter interfaces** so Postgres, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
+A **single Next.js process** keeps `npm run dev` simple. Storage, OCR, LLM, search, and ledger are **adapter interfaces** so Postgres, MinIO, OpenSearch, Tesseract, a live model, or Fabric can be swapped later without claiming they are already live.
 
-## Data flow (Phase 1)
+## Data flow (Authentication and Access)
 
 1. User submits email/password. Failed logins are audited.
 2. If `mfaEnabled`, a demo OTP (`DEMO_OTP`) is required.
@@ -70,18 +70,18 @@ A **single Next.js process** keeps `npm run dev` simple for the . Storage, OCR, 
 4. Case pages and `GET /api/cases/:id` call `authorizeCase`, which evaluates role, assignment, and classification, then writes `ACCESS_ALLOWED` or `ACCESS_DENIED`.
 5. Role switcher (when `DEMO_ROLE_SWITCH=true`) issues a new session and writes `ROLE_SWITCH`.
 
-## Later-phase flows (designed, not fully built)
+## Data flow (Documents and AI)
 
-Upload → simulated malware/MIME/size validation → encrypt to object store → immutable `DocumentVersion` → SHA-256 → hash-chain event → OCR/index → optional share/redact → local AI summarization over authorized context (no deep vector RAG yet).
+Upload → ClamAV malware/MIME/size validation → encrypt to object store → immutable `DocumentVersion` → SHA-256 → hash-chain event → OCR/index (with PII redaction) → optional share/redact/certify → local AI summarization over authorized context. e-Sign signatures in the court bundle are simulated using HS256 JWT; production requires a CCA-licensed DSC or Aadhaar eSign.
 
 ## What is stored where
 
 | Store | Contents |
 |---|---|
 | SQLite | Users, cases, assignments, policies, documents metadata, versions metadata, audit, ledger events |
-| Filesystem (Phase 2) | Encrypted file bytes |
+| Object store | Encrypted file bytes |
 | Hash chain | Hashes, event type, actor id, timestamps, proof id — **never** raw documents or PII |
-| LLM (Phase 6) | Full case context passed to local WebWorker model |
+| LLM | Full case context passed to local WebWorker model |
 
 ## Production path
 

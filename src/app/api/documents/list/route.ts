@@ -13,31 +13,44 @@ export async function GET(request: NextRequest) {
 
   const caseIds = assignments.map(a => a.caseId);
 
-  const docs = await prisma.document.findMany({
-    where: { caseId: { in: caseIds } },
+  const results = await prisma.document.findMany({
+    where: {
+      caseId: { in: caseIds }
+    },
     include: {
       case: { select: { caseNumber: true } },
-      ocrData: { select: { extractedData: true } }
+      ocrExtractions: { take: 1, orderBy: { version: "desc" }, select: { extractedData: true } }
     },
     orderBy: { createdAt: "desc" }
   });
 
-  const formatted = docs.map(doc => {
+  const formatted = results.map((doc: any) => {
+    let summary = null;
     let ocrKeys: string[] = [];
-    if (doc.ocrData?.extractedData) {
+    const latestOcr = doc.ocrExtractions?.[0];
+    if (latestOcr?.extractedData) {
       try {
-        const parsed = JSON.parse(doc.ocrData.extractedData);
-        ocrKeys = Object.keys(parsed.fields || {});
+        const parsed = JSON.parse(latestOcr.extractedData);
+        if (parsed?.fields) {
+          if (parsed.fields.summary) {
+            summary = parsed.fields.summary;
+          }
+          ocrKeys = Object.keys(parsed.fields);
+        }
       } catch (e) {
-        // ignore JSON parse error
+        // ignore
       }
     }
 
     return {
       id: doc.id,
       title: doc.title,
-      caseNumber: doc.case.caseNumber,
-      ocrKeys
+      type: doc.type,
+      caseNumber: doc.case?.caseNumber || "Unknown",
+      status: doc.status,
+      summary,
+      ocrKeys,
+      createdAt: doc.createdAt
     };
   });
 

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
+import { evaluateAccess } from "@/lib/auth/abac";
+import { writeAudit, clientIp } from "@/lib/audit";
+import crypto from "crypto";
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
@@ -16,9 +19,22 @@ export async function GET(request: NextRequest) {
   // 1. Get user's assigned cases (ABAC Enforcement)
   const assignments = await prisma.caseAssignment.findMany({
     where: { userId: user.id },
-    select: { caseId: true }
+    include: { case: true }
   });
-  const caseIds = assignments.map(a => a.caseId);
+
+  // Filter cases the user actually has permission to view
+  const caseIds = assignments
+    .filter(a => {
+      const decision = evaluateAccess({
+        role: user.role,
+        assigned: true,
+        caseClassification: a.case.classification,
+        action: "view_document",
+        purpose: a.purpose,
+      });
+      return decision.allowed;
+    })
+    .map(a => a.caseId);
 
   // 2. Perform Keyword Search across Metadata and OCR text
   const results = await prisma.document.findMany({
@@ -28,28 +44,41 @@ export async function GET(request: NextRequest) {
         { title: { contains: q } },
         { case: { caseNumber: { contains: q } } },
         {
-          ocrData: {
-            rawText: { contains: q }
+          ocrExtractions: {
+            some: { rawText: { contains: q } }
           }
         }
       ]
     },
     include: {
       case: { select: { caseNumber: true } },
-      ocrData: { select: { rawText: true, status: true } }
+      ocrExtractions: { take: 1, orderBy: { version: "desc" }, select: { rawText: true, status: true } }
     },
     take: 50
+  });
+
+  // Write audit event for SEARCH
+  const qHash = crypto.createHash("sha256").update(q).digest("hex");
+  await writeAudit({
+    actorId: user.id,
+    role: user.role,
+    action: "ACCESS_ALLOWED",
+    result: "SUCCESS",
+    ip: clientIp(request.headers),
+    userAgent: request.headers.get("user-agent"),
+    reason: `Performed SEARCH (query hash: ${qHash})`,
   });
 
   const formatted = results.map((doc: any) => {
     // Generate a snippet of the OCR text if matched
     let snippet = null;
-    if (doc.ocrData?.rawText) {
-      const idx = doc.ocrData.rawText.toLowerCase().indexOf(q.toLowerCase());
+    const latestOcr = doc.ocrExtractions && doc.ocrExtractions.length > 0 ? doc.ocrExtractions[0] : null;
+    if (latestOcr?.rawText) {
+      const idx = latestOcr.rawText.toLowerCase().indexOf(q.toLowerCase());
       if (idx !== -1) {
         const start = Math.max(0, idx - 40);
-        const end = Math.min(doc.ocrData.rawText.length, idx + q.length + 40);
-        snippet = `...${doc.ocrData.rawText.substring(start, end).replace(/\n/g, " ")}...`;
+        const end = Math.min(latestOcr.rawText.length, idx + q.length + 40);
+        snippet = `...${latestOcr.rawText.substring(start, end).replace(/\n/g, " ")}...`;
       }
     }
 

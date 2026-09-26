@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
-import { authorizeCase } from "@/lib/audit";
+import { authorizeCase, authorizeDocument } from "@/lib/audit";
 import { exec } from "child_process";
 import path from "path";
 
@@ -20,10 +20,11 @@ export async function POST(
 
   if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-  const authResult = await authorizeCase({
+  const authResult = await authorizeDocument({
     user,
-    caseId: document.caseId,
+    docId,
     action: "review_ocr", 
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -32,16 +33,9 @@ export async function POST(
   // Instead of running Tesseract in the Next.js API Route (which causes freezing/memory leaks
   // because Webpack interferes with WebAssembly workers in Serverless environments),
   // we detach the heavy OCR pipeline to a completely isolated background OS process.
-  
-  const scriptPath = path.join(process.cwd(), "scripts", "ocr-worker.ts");
-  
-  exec(`npx tsx "${scriptPath}" "${docId}"`, (err, stdout, stderr) => {
-    if (err) {
-      console.error(`[OCR BACKGROUND LAUNCH ERROR] ${err.message}`);
-    }
-    if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
-  });
+  // We use a queue to prevent unbounded concurrency.
+  const { enqueueOcrJob } = require("@/lib/ocr-queue");
+  enqueueOcrJob(docId);
 
   return NextResponse.json({ 
     success: true, 

@@ -5,13 +5,15 @@ import { authorizeCase, writeAudit, clientIp } from "@/lib/audit";
 import { env } from "@/lib/env";
 import path from "path";
 import fs from "fs/promises";
+import { kms } from "@/lib/kms";
+import { getStorage } from "@/lib/storage";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ docId: string }> }
 ) {
-  if (process.env.NODE_ENV === "production" || process.env.DEMO_MODE !== "true") {
-    return NextResponse.json({ error: "Tamper endpoint is only available when DEMO_MODE=true" }, { status: 403 });
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Tamper endpoint is disabled in production" }, { status: 403 });
   }
 
   const user = await getSessionUser();
@@ -30,7 +32,8 @@ export async function POST(
   const authResult = await authorizeCase({
     user,
     caseId: document.caseId,
-    action: "manage_demo",
+    action: "view_document",
+    purpose: "Demonstrate Cryptographic Tampering",
     userAgent: request.headers.get("user-agent"),
   });
 
@@ -46,8 +49,9 @@ export async function POST(
     return NextResponse.json({ error: "Document version not found" }, { status: 404 });
   }
 
-  // Intentionally tamper with the file on disk by bypassing the storage adapter
-  // and appending garbage bytes to the encrypted payload.
+  // Intentionally tamper with the file by decrypting it, appending garbage
+  // to the plaintext, and re-encrypting it. This ensures the decryption
+  // succeeds but the SHA-256 hash completely changes.
   const rootDir = path.resolve(/*turbopackIgnore: true*/ process.cwd(), env.storageRoot);
   const filePath = path.join(rootDir, versionRecord.storageKey);
 
@@ -59,8 +63,19 @@ export async function POST(
       await fs.copyFile(filePath, backupPath);
     }
 
-    // Append 8 bytes of garbage to the end of the encrypted file
-    await fs.appendFile(filePath, Buffer.from("TAMPERED", "utf-8"));
+    const storage = getStorage();
+    const aad = `${docId}|${document.currentVersion}`;
+    
+    let plaintext;
+    try {
+      plaintext = await storage.get(versionRecord.storageKey, aad);
+    } catch {
+      plaintext = await storage.get(versionRecord.storageKey);
+    }
+    const tamperedPlaintext = Buffer.concat([plaintext, Buffer.from("TAMPERED", "utf-8")]);
+    
+    const tamperedCiphertext = await kms.encrypt(tamperedPlaintext, aad);
+    await fs.writeFile(filePath, tamperedCiphertext);
 
     await writeAudit({
       actorId: user.id,
@@ -74,9 +89,14 @@ export async function POST(
       reason: "Demo file tamper action executed (sandbox backup created)",
       metadata: { action: "TAMPER" },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to tamper file:", error);
-    return NextResponse.json({ error: "Failed to modify file on disk" }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: "Failed to modify file on disk", 
+      details: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 
   return NextResponse.json({ 
