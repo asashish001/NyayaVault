@@ -376,10 +376,10 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
             });
           } else {
             const errText = await res.text();
-            updateDraft(draft.id, { state: "done", rawText: `OCR API failed: ${res.status} ${errText}` });
+            updateDraft(draft.id, { state: "error", errorMessage: `OCR API failed: ${res.status} ${errText}`, uiStep: 7 });
           }
         } catch (e: any) {
-          updateDraft(draft.id, { state: "done", rawText: `OCR Fetch failed: ${e.message}` });
+          updateDraft(draft.id, { state: "error", errorMessage: `OCR Fetch failed: ${e.message}`, uiStep: 7 });
         }
       };
       fetchOcr();
@@ -427,24 +427,25 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
       </CardHeader>
       <CardContent className="pt-4">
         
-        {draft.state === "error" ? (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded border border-red-100">
+        <div className="space-y-3 mb-4">
+          <PipelineItem label="File received" active={draft.uiStep >= 0} done={draft.uiStep >= 1 && !(draft.state === "error" && draft.uiStep === 0)} error={draft.state === "error" && draft.uiStep === 0} />
+          <PipelineItem label="Malware scan passed" active={draft.uiStep >= 1} done={draft.uiStep >= 2 && !(draft.state === "error" && draft.uiStep === 1)} error={draft.state === "error" && draft.uiStep === 1} />
+          <PipelineItem label="SHA-256 calculated" active={draft.uiStep >= 2} done={draft.uiStep >= 3 && !(draft.state === "error" && draft.uiStep === 2)} error={draft.state === "error" && draft.uiStep === 2} />
+          <PipelineItem label="Evidence encrypted" active={draft.uiStep >= 3} done={draft.uiStep >= 4 && !(draft.state === "error" && draft.uiStep === 3)} error={draft.state === "error" && draft.uiStep === 3} />
+          <PipelineItem label="Integrity proof recorded" active={draft.uiStep >= 4} done={draft.uiStep >= 5 && !(draft.state === "error" && draft.uiStep === 4)} error={draft.state === "error" && draft.uiStep === 4} />
+          <PipelineItem label="OCR processing" active={draft.uiStep >= 5} done={draft.uiStep >= 6 && !(draft.state === "error" && draft.uiStep === 5)} error={draft.state === "error" && draft.uiStep === 5} />
+          <PipelineItem label="Metadata extraction" active={draft.uiStep >= 6} done={draft.uiStep >= 7 && !(draft.state === "error" && draft.uiStep === 6)} error={draft.state === "error" && draft.uiStep === 6} />
+          <PipelineItem 
+            label={`Human review ${draft.state === "polling" ? "(Pending)" : (draft.state === "done" ? "(Done)" : "(In Progress)")}`}
+            active={draft.state === "reviewing"} 
+            done={draft.state === "done"} 
+            error={draft.state === "error" && draft.uiStep >= 7}
+          />
+        </div>
+
+        {draft.state === "error" && (
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded border border-red-100 mt-4">
             {draft.errorMessage || "An unknown error occurred during processing."}
-          </div>
-        ) : (
-          <div className="space-y-3 mb-4">
-            <PipelineItem label="File received" active={draft.uiStep >= 0} done={draft.uiStep >= 1} />
-            <PipelineItem label="Malware scan passed" active={draft.uiStep >= 1} done={draft.uiStep >= 2} />
-            <PipelineItem label="SHA-256 calculated" active={draft.uiStep >= 2} done={draft.uiStep >= 3} />
-            <PipelineItem label="Evidence encrypted" active={draft.uiStep >= 3} done={draft.uiStep >= 4} />
-            <PipelineItem label="Integrity proof recorded" active={draft.uiStep >= 4} done={draft.uiStep >= 5} />
-            <PipelineItem label="OCR processing" active={draft.uiStep >= 5} done={draft.uiStep >= 6} />
-            <PipelineItem label="Metadata extraction" active={draft.uiStep >= 6} done={draft.uiStep >= 7} />
-            <PipelineItem 
-              label={`Human review ${draft.state === "polling" ? "(Pending)" : (draft.state === "done" ? "(Done)" : "(In Progress)")}`}
-              active={draft.state === "reviewing"} 
-              done={draft.state === "done"} 
-            />
           </div>
         )}
         {(draft.state === "reviewing" || (draft.state === "done" && !draft.reviewedById)) && draft.docId && (
@@ -476,7 +477,15 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
   );
 }
 
-function PipelineItem({ label, active, done }: { label: string; active: boolean; done: boolean }) {
+function PipelineItem({ label, active, done, error }: { label: string; active: boolean; done: boolean; error?: boolean }) {
+  if (error) {
+    return (
+      <div className="flex items-center gap-3 text-red-600 font-bold text-sm">
+        <X className="h-4 w-4" />
+        <span>{label} (Failed)</span>
+      </div>
+    );
+  }
   if (done) {
     return (
       <div className="flex items-center gap-3 text-green-600 font-bold text-sm">
