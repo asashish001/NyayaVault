@@ -14,7 +14,7 @@ function secret() {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  const rpm = Number(process.env.RATE_LIMIT_RPM ?? "120");
+  const rpm = Number(process.env.RATE_LIMIT_RPM ?? "600");
   const limited = rateLimit(ip, rpm);
 
   if (!limited.ok && pathname.startsWith("/api/")) {

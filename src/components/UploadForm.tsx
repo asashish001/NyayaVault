@@ -403,7 +403,7 @@ function DocumentProcessor({ draft, updateDraft }: { draft: DocumentDraft, updat
         } catch (e) {
           console.error("Polling error", e);
         }
-      }, 1000);
+      }, 3000);
       return () => clearInterval(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

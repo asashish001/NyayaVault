@@ -20,6 +20,7 @@ Before you clone and run this repository, please note the following to ensure a 
 1. **100% Offline AI:** The AI Legal Assistant runs entirely locally in your browser using a quantized ONNX model and WebGPU. Zero data is sent to the cloud.
 2. **Standalone Architecture:** To make setup as frictionless as possible, we avoided complex Docker orchestration. The entire stack (Backend API, Frontend UI, SQLite Database, Local File Storage, and Local OCR) runs inside a **single Next.js process**.
 3. **Pre-Seeded Data:** Running `npm run db:seed` will automatically populate the database with a fictional women-safety case, dummy documents, and the required role-based user accounts so you don't have to register from scratch.
+4. **First-Run OCR Delay:** The very first time you upload an image for OCR, the local `tesseract.js` engine will download the required language models from the internet in the background. This can take a minute depending on your connection. Our frontend is configured to poll patiently during this phase without hitting rate limits!
 
 ## Quick start
 
